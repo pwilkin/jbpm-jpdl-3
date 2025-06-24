@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ============================================================ -->
+<!--  JBoss, the OpenSource J2EE webOS                            -->
+<!--  Distributable under LGPL license.                           -->
+<!--  See terms of license at http://www.gnu.org.                 -->
+<!-- ============================================================ -->
+
+<!-- $Id: antrun-test-jars.xml 3405 2008-12-17 07:26:02Z thomas.diesler@jboss.com $ -->
+
+<project>
+  
+  <description>jBPM enterprise test archive builder</description>
+  
+  <!-- ================================================================== -->
+  <!-- Building                                                           -->
+  <!-- ================================================================== -->
+  
+  <target name="build-test-jars" description="Build the test deployments">
+    
+    <mkdir dir="${tests.output.dir}/test-libs"/>
+    
+    <!-- enterprise-test -->
+    <war warfile="${tests.output.dir}/test-libs/enterprise-test.war" webxml="${tests.resources.dir}/enterprise/WEB-INF/web.xml">
+      <classes dir="${tests.output.dir}/classes">
+        <include name="org/jbpm/ejb/RemoteCommandServiceHome.class"/>
+        <include name="org/jbpm/ejb/RemoteCommandService.class"/>
+        <include name="org/jbpm/ejb/TimerEntityHome.class"/>
+        <include name="org/jbpm/ejb/TimerEntity.class"/>
+        <include name="org/jbpm/msg/jms/JmsMessageServiceFactory.class"/>
+        <include name="org/jbpm/scheduler/ejbtimer/EntitySchedulerServiceFactory.class"/>
+      </classes>
+      <classes dir="${tests.output.dir}/test-classes">
+        <include name="org/jbpm/enterprise/config/AppServerConfigurationsTest.class"/>
+        <include name="org/jbpm/enterprise/ejbtimer/EjbSchedulerTest*.class"/>
+        <include name="org/jbpm/enterprise/jms/JmsMessageTest*.class"/>
+        <include name="org/jbpm/enterprise/jta/JtaDbPersistenceTest.class"/>
+      </classes>
+      <lib dir="${tests.output.dir}/test-dependencies">
+        <include name="aspectjrt*.jar"/>
+        <include name="cactus*.jar"/>
+        <include name="junit*.jar"/>
+      </lib>
+      <webinf dir="${tests.resources.dir}/enterprise/WEB-INF">
+        <exclude name="web.xml"/>
+      </webinf>
+    </war>
+
+    <!-- fork-join-example -->
+    <jar jarfile="${tests.output.dir}/test-libs/fork-join-example.par">
+      <fileset dir="${tests.resources.dir}/deployment/fork-join-example"/>
+    </jar>
+  	
+    <!-- Please add alphabetically -->
+    
+  </target>
+  
+</project>

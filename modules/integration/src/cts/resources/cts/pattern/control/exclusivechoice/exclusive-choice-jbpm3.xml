@@ -1,0 +1,17 @@
+<process-definition name="exclusiveSplit" xmlns="urn:jbpm.org:jpdl-3.2">
+
+  <start-state name='start'>
+    <transition to='gateway' />
+  </start-state>
+  <decision name="gateway">
+    <transition to="endA">
+      <condition>#{foo &lt; 10}</condition>
+    </transition>
+    <transition to="endB">
+      <condition>#{foo &gt; 10}</condition>
+    </transition>
+  </decision>
+  <end-state name='endA' />
+  <end-state name='endB' />
+
+</process-definition>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ============================================================ -->
+<!--  JBoss, the OpenSource J2EE webOS                            -->
+<!--  Distributable under LGPL license.                           -->
+<!--  See terms of license at http://www.gnu.org.                 -->
+<!-- ============================================================ -->
+
+<!-- $Id: antrun-test-jars.xml 3154 2008-11-28 16:41:56Z thomas.diesler@jboss.com $ -->
+
+<project>
+  
+  <description>jBPM enterprise test archive builder</description>
+  
+  <!-- ================================================================== -->
+  <!-- Building                                                           -->
+  <!-- ================================================================== -->
+  
+  <target name="build-test-jars" description="Build the test deployments">
+    
+    <mkdir dir="${tests.output.dir}/test-libs"/>
+    
+    <!-- fork-join-example -->
+    <jar jarfile="${tests.output.dir}/test-libs/fork-join-example.par">
+      <fileset dir="${tests.resources.dir}/deployment/fork-join-example"/>
+    </jar>
+
+    <!-- Please add alphabetically -->
+    
+  </target>
+  
+</project>

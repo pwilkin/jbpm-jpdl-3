@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ============================================================ -->
+<!--  JBoss, the OpenSource J2EE webOS                            -->
+<!--  Distributable under LGPL license.                           -->
+<!--  See terms of license at http://www.gnu.org.                 -->
+<!-- ============================================================ -->
+
+<!-- $Id: antrun-jbpmschema.xml 2999 2008-11-19 16:16:01Z thomas.diesler@jboss.com $ -->
+
+<project>
+
+  <!-- ================================================================== -->
+  <!-- jBPM Database schema                                               -->
+  <!-- ================================================================== -->
+
+  <target name="setup-schema">
+
+    <!-- echo message="${maven.runtime.classpath}"/ -->
+      
+    <taskdef name="jbpmschema" classname="org.jbpm.ant.JbpmSchemaTask">
+      <classpath path="${maven.runtime.classpath}"/>
+    </taskdef>
+
+    <property name="scriptsdir" value="${basedir}/target/classes"/>
+    <mkdir dir="${scriptsdir}"/>
+
+  </target>
+
+  <target name="create-schema" depends="setup-schema" description="Generate jBPM Database Schemas">
+
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.db2.sql" config="hibernate.cfg.db2.xml" action="create"/>
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.derby.sql" config="hibernate.cfg.derby.xml" action="create"/>
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.firebird.sql" config="hibernate.cfg.firebird.xml" action="create"/>
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.hsqldb.sql" config="hibernate.cfg.hsqldb.xml" action="create"/>
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.ingres.sql" config="hibernate.cfg.ingres.xml" action="create"/>
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.interbase.sql" config="hibernate.cfg.interbase.xml" action="create"/>
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.mckoi.sql" config="hibernate.cfg.mckoi.xml" action="create"/>
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.mssql.sql" config="hibernate.cfg.mssql.xml" action="create"/>
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.mysql.sql" config="hibernate.cfg.mysql.xml" action="create" delimiter=";"/>
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.oracle.sql" config="hibernate.cfg.oracle.xml" action="create" delimiter=";"/>
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.postgresql.sql" config="hibernate.cfg.postgresql.xml" action="create"/>
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.sapdb.sql" config="hibernate.cfg.sapdb.xml" action="create"/>
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.sybase.sql" config="hibernate.cfg.sybase.xml" action="create"/>
+   
+    <!--[JBPM-1813] Fix create schema generation -->
+    <!--jbpmschema output="${scriptsdir}/jbpm.jpdl.informix.sql" config="hibernate.cfg.informix.xml" action="create"/-->
+    <!--jbpmschema output="${scriptsdir}/jbpm.jpdl.pointbase.sql" config="hibernate.cfg.pointbase.xml" action="create"/-->
+    <!--jbpmschema output="${scriptsdir}/jbpm.jpdl.progress.sql" config="hibernate.cfg.progress.xml" action="create"/-->
+   
+  </target>
+  
+  <target name="update-schema" depends="setup-schema" description="Generate jBPM Database Update Scripts">
+  
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.mysql.update322.sql" config="hibernate.cfg.mysql.xml" properties="mysql.properties" action="update" delimiter=";"/>
+    <jbpmschema output="${scriptsdir}/jbpm.jpdl.sybase.update322.sql" config="hibernate.cfg.sybase.xml" properties="sybase.properties" action="update" delimiter=";"/>
+   
+  </target>
+  
+</project>

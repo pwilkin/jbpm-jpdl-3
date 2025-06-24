@@ -1,0 +1,85 @@
+<body><h1>jBPM-3.3.1.GA Release Notes</h1>
+<h3>Bug</h3>
+<ul>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1716">JBPM-1716</a>] -         NPE in Transition.fireSuperStateEnterEvents() when destination is null </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1756">JBPM-1756</a>] -         NullPointerException using bcc recipients in org.jbpm.mail.Mail </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1778">JBPM-1778</a>] -         Empty map variables on process creation is set as null </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1811">JBPM-1811</a>] -         JmsMessageTest fails intermitently on HSQLDB </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1829">JBPM-1829</a>] -         Sybase transaction log full - dump needed </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1830">JBPM-1830</a>] -         Fix AppServerConfigurationsTest for sybase on jboss500 </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1913">JBPM-1913</a>] -         Support JBoss AS 5.0 for JSF Console </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1921">JBPM-1921</a>] -         getGroupTaskList(List actorids) behaviour changed </li>
+</ul>
+<p> </p>
+<h3>Feature Request</h3>
+<ul>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1888">JBPM-1888</a>] -         Allow unlocking Token without knowing the lock owner </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1909">JBPM-1909</a>] -         Fix SubjectAuthenticationService </li>
+</ul>
+<p> </p>
+<h3>Quality Risk</h3>
+<ul>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1765">JBPM-1765</a>] -         Unclosed InputStream in org.jbpm.util.ClassLoaderUtil.getProperties </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1887">JBPM-1887</a>] -         ExceptionHandler may cause infinite loop </li>
+</ul>
+<p> </p>
+<h3>Task</h3>
+<ul>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1303">JBPM-1303</a>] -         Add installer support for jboss-5.0.0 </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1764">JBPM-1764</a>] -         Deadlocks make job execution tests fail on Sybase </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1775">JBPM-1775</a>] -         verify if collection exceptionHandlers can be loaded lazy </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1814">JBPM-1814</a>] -         make jbpm installation in jboss optional </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1816">JBPM-1816</a>] -         Sanitize tests that leak JDBC connections </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1819">JBPM-1819</a>] -         re-enable the standard configuration </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1823">JBPM-1823</a>] -         re-enable the datbase upgrade tool </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1824">JBPM-1824</a>] -         Investigate core test failures against Sybase </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1831">JBPM-1831</a>] -         Provide a start/stop script for sybase </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1843">JBPM-1843</a>] -         Revert to jbpm-3.2.2 schema and provide a defined migration path </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1852">JBPM-1852</a>] -         Fix sporadic MailTest failure </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1854">JBPM-1854</a>] -         Update to jbpm-gpd-3.1.6 </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1855">JBPM-1855</a>] -         Release jBPM 3.3.1 GA </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1856">JBPM-1856</a>] -         Support API-1.0.0 Alpha3 on jBPM3 </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1866">JBPM-1866</a>] -         add javadocs to installer </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1883">JBPM-1883</a>] -         Provide an initial implementation of an AS4 deployer </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1884">JBPM-1884</a>] -         Provide an initial implementation of an AS5 deployer </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1894">JBPM-1894</a>] -         Check jBPM library versions </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1902">JBPM-1902</a>] -         Add support for JBoss-5.0.0.GA </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1904">JBPM-1904</a>] -         Add toString() to Commands </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1905">JBPM-1905</a>] -         Improve Commands </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1919">JBPM-1919</a>] -         Ensure backward compatibility of the API </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1920">JBPM-1920</a>] -         Include SOA-P overlays in jbpm build </li>
+<li>[<a href="https://jira.jboss.org/jira/browse/JBPM-1932">JBPM-1932</a>] -         Release the JSF Console 3.3.1.GA </li>
+</ul>
+<h3>Known limitations</h3>
+<h3>XML editing in the process designer</h3>
+<p>Direct editing of XML can lead to crashes in the graphical designer. This will be fixed in one of the next releases.  Before you start editing the process XML source, make sure you create a backup copy.</p>
+<h3>Transition buttons in task forms</h3>
+<p>When generating a task form for a task, the transitions are not  automatically populated in the generation dialog.  Users have to  enter the transition names and the button labels manually.  If you  don't do this no transition buttons will be generated to complete the  task in the task form.</p>
+<p><strong>Workaround</strong>: First option is to add the transition buttons  in the task form generation dialog.  If you generated a task form without transition buttons, you still can complete the task with the console.   Just save the variables in the task form and then in the 'Views' menu,  select 'Transitions'.  There you can click the 'end task' link for  each of the available transitions.</p>
+<h3>Security vulnerability for GPD deployment</h3>
+<p>In the suite distribution, the console that is deployed in the server contains a servlet that allows the designer to deploy processes directly  to a running server.  This servlet is unprotected and people could load  any process into a default installation.  <a href="https://jira.jboss.org/jira/browse/GPD-278">[GPD-278]</a></p>
+<h3>Excluded test cases</h3>
+<p> </p>
+<p><strong>Core tests, HSQLDB</strong></p>
+<p> </p>
+<pre class="jive_text_macro jive_macro_code" jivemacro="code" ___default_attr="plain"><p>&lt;!-- [JBPM-1810] Fix clean, drop, create schema with JbpmSchema --&gt;</p><p>&lt;exclude&gt;org/jbpm/db/JbpmSchemaDbTest.java&lt;/exclude&gt;</p></pre>
+<p> </p>
+<p><strong>Core tests - MySQL</strong></p>
+<pre class="jive_text_macro jive_macro_code" jivemacro="code" ___default_attr="plain"><p>&lt;!-- [JBPM-1166] SEAM timer transaction integration --&gt;<br />&lt;exclude&gt;org/jbpm/seam/JobExecutorCustomizationTest.java&lt;/exclude&gt;<br />&lt;!-- [JBPM-1810] Fix clean, drop, create schema with JbpmSchema  --&gt;<br />&lt;exclude&gt;org/jbpm/db/JbpmSchemaDbTest.java&lt;/exclude&gt;</p></pre>
+<p> </p>
+<p><strong>Core test, Sybase</strong></p>
+<pre class="jive_text_macro jive_macro_code" jivemacro="code" ___default_attr="plain"><p>&lt;!-- [JBPM-1810] Fix clean, drop, create schema with JbpmSchema  --&gt;<br />&lt;exclude&gt;org/jbpm/db/JbpmSchemaDbTest.java&lt;/exclude&gt;</p></pre>
+<p> </p>
+<p><strong>Enterprise tests - HSQLDB</strong></p>
+<p> </p>
+<pre class="jive_text_macro jive_macro_code" jivemacro="code" ___default_attr="plain"><p>&lt;!-- [JBPM-1708] Enterprise EjbSchedulerTest fails --&gt;</p><p>&lt;exclude&gt;org/jbpm/scheduler/ejbtimer/EjbSchedulerTest.java&lt;/exclude&gt;</p></pre>
+<p> </p>
+<p><strong>Enterprise tests, Sybase</strong></p>
+<p> </p>
+<pre class="jive_text_macro jive_macro_code" jivemacro="code" ___default_attr="plain"><p>&lt;!-- [JBPM-1818] Use Sybase instance that supports XA Transaction --&gt;<br />&lt;exclude&gt;org/jbpm/scheduler/ejbtimer/EjbSchedulerTest.java&lt;/exclude&gt;<br />&lt;exclude&gt;org/jbpm/persistence/jta/JtaDbPersistenceTest.java&lt;/exclude&gt;<br />&lt;exclude&gt;org/jbpm/msg/jms/JmsMessageTest.java&lt;/exclude&gt;</p></pre>
+<p> </p>
+<p> </p>
+<p><strong>Examples tests, Sybase</strong></p>
+<p> </p>
+<pre class="jive_text_macro jive_macro_code" jivemacro="code" ___default_attr="plain"><p>&lt;!-- [JBPM-1827] Investigate example test failures against Sybase --&gt;</p><p>&lt;exclude&gt;org/jbpm/examples/taskinstance/CustomTaskInstanceTest.java&lt;/exclude&gt;</p></pre>
+<p> </p></body>

@@ -1,0 +1,51 @@
+<!--
+  Note, this uses the bean-deployer-2.0 schema
+  $Id: bpm-spec-jbpm3-beans.xml 3479 2008-12-20 12:55:32Z thomas.diesler@jboss.com $ 
+-->
+<deployment xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:jboss:bean-deployer:2.0 bean-deployer_2_0.xsd" xmlns="urn:jboss:bean-deployer:2.0">
+
+ <!-- Locate the single instance of the kernel -->
+ <bean name="BPMKernelLocator" class="org.jboss.bpm.api.config.internal.KernelLocator">
+  <property name="kernel"><inject bean="jboss.kernel:service=Kernel" /></property>
+ </bean>
+
+ <!-- The ProcessEngine -->
+ <bean name="BPMProcessEngine" class="org.jbpm.integration.spec.service.ProcessEngineImpl">
+  <property name="services">
+   <set elementClass="org.jboss.bpm.api.service.Service">
+    <inject bean="BPMContextService"/>
+    <inject bean="BPMDeploymentService"/>
+    <inject bean="BPMDialectHandlerService"/>
+    <inject bean="BPMIdentityService"/>
+    <inject bean="BPMProcessDefinitionService"/>
+    <inject bean="BPMProcessInstanceService"/>
+    <inject bean="BPMSignalBuilderService"/>
+    <inject bean="BPMSignalService"/>
+    <inject bean="BPMTaskInstanceService"/>
+    <inject bean="BPMTokenService"/>
+   </set>
+  </property>
+ </bean>
+
+ <!-- The DialectHandlerService -->
+ <bean name="BPMDialectHandlerService" class="org.jbpm.integration.spec.service.DialectHandlerServiceImpl">
+  <property name="dialectHandlers">
+   <map keyClass="java.net.URI" valueClass="org.jboss.bpm.api.service.DialectHandler">
+    <entry><key>urn:jbpm.org:jpdl-3.2</key><value><inject bean="BPMDialectHandlerJPDL32"/></value></entry>
+   </map>
+  </property>
+ </bean>
+ <bean name="BPMDialectHandlerJPDL32" class="org.jbpm.integration.spec.jpdl32.DialectHandlerImpl" />
+
+ <!-- Other Services -->
+ <bean name="BPMContextService" class="org.jbpm.integration.spec.service.ContextServiceImpl" />
+ <bean name="BPMDeploymentService" class="org.jbpm.integration.spec.service.DeploymentServiceImpl" />
+ <bean name="BPMIdentityService" class="org.jbpm.integration.spec.service.IdentityServiceImpl" />
+ <bean name="BPMProcessDefinitionService" class="org.jbpm.integration.spec.service.ProcessDefinitionServiceImpl" />
+ <bean name="BPMProcessInstanceService" class="org.jbpm.integration.spec.service.ProcessInstanceServiceImpl"/>
+ <bean name="BPMSignalBuilderService" class="org.jbpm.integration.spec.service.SignalBuilderServiceImpl" />
+ <bean name="BPMSignalService" class="org.jbpm.integration.spec.service.SignalServiceImpl" />
+ <bean name="BPMTaskInstanceService" class="org.jbpm.integration.spec.service.TaskInstanceServiceImpl" />
+ <bean name="BPMTokenService" class="org.jbpm.integration.spec.service.TokenServiceImpl" />
+
+</deployment>
