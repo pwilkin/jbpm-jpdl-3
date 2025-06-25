@@ -43,7 +43,8 @@
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
     </dependency>
-    <dependency>
+    <!-- dom4j will be provided transitively by Hibernate 5 with a compatible version (2.1.3) -->
+    <!-- <dependency>
       <groupId>dom4j</groupId>
       <artifactId>dom4j</artifactId>
       <exclusions>
@@ -52,7 +53,7 @@
       	  <groupId>xml-apis</groupId>
       	</exclusion>
       </exclusions>
-    </dependency>
+    </dependency> -->
     <dependency>
       <groupId>javax.jcr</groupId>
       <artifactId>jcr</artifactId>
@@ -89,21 +90,28 @@
     <dependency>
       <groupId>org.hibernate</groupId>
       <artifactId>hibernate-core</artifactId>
+      <version>${hibernate.version}</version> <!-- Explicit version -->
     </dependency>
-    <dependency>
+    <!-- cglib is no longer needed as a direct dependency with Hibernate 5+ -->
+    <!-- <dependency>
 		<groupId>cglib</groupId>
 		<artifactId>cglib</artifactId>
-	</dependency>
+	</dependency> -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <scope>provided</scope>
     </dependency>
-   	<dependency>
+	<!-- <dependency>
 		<groupId>org.javassist</groupId>
 		<artifactId>javassist</artifactId>
 		<version>3.18.2-GA</version>
-	</dependency>    
+	</dependency> -->
+    <dependency>
+      <groupId>org.glassfish.corba</groupId>
+      <artifactId>glassfish-corba-omgapi</artifactId>
+      <version>4.1.0</version>
+    </dependency>
 
     <!-- Test Dependencies -->
     <dependency>
@@ -115,6 +123,20 @@
       <groupId>jaxen</groupId>
       <artifactId>jaxen</artifactId>
       <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>xml-apis</groupId>
+          <artifactId>xml-apis</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>xerces</groupId>
+          <artifactId>xercesImpl</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>xerces</groupId>
+          <artifactId>xmlParserAPIs</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -165,8 +187,12 @@
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version> <!-- Explicitly set version -->
         <configuration>
           <showDeprecation>false</showDeprecation>
+          <!-- Ensure Java 8 source/target, inheriting from parent or explicitly setting -->
+          <source>1.8</source>
+          <target>1.8</target>
         </configuration>
       </plugin>
       <plugin>
@@ -189,10 +215,10 @@
               <goal>run</goal>
             </goals>
             <configuration>
-              <tasks>
+              <target>
                 <property name="database" value="${database}" />
                 <ant antfile="scripts/antrun-jbpm-config.xml" target="concat" />
-              </tasks>
+              </target>
             </configuration>
           </execution>
         </executions>

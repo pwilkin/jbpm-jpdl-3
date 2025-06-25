@@ -6,8 +6,11 @@ import java.sql.Statement;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
-import org.hibernate.connection.ConnectionProvider;
-import org.hibernate.impl.SessionFactoryImpl;
+import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
+import org.hibernate.service.ServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.engine.spi.SessionFactoryImplementor; // Added
+// import org.hibernate.impl.SessionFactoryImpl; // Removed
 import org.jbpm.JbpmConfiguration;
 import org.jbpm.JbpmContext;
 import org.jbpm.persistence.db.DbPersistenceServiceFactory;
@@ -21,8 +24,9 @@ public class ShutDownHsqldb extends Task {
     JbpmContext jbpmContext = jbpmConfiguration.createJbpmContext();
     try {
       DbPersistenceServiceFactory dbPersistenceServiceFactory = (DbPersistenceServiceFactory) jbpmContext.getServiceFactory(Services.SERVICENAME_PERSISTENCE);
-      SessionFactoryImpl sessionFactory = (SessionFactoryImpl) dbPersistenceServiceFactory.getSessionFactory();
-      ConnectionProvider connectionProvider = sessionFactory.getConnectionProvider();
+      // Assumes DbPersistenceServiceFactory will have a getServiceRegistry() method after its refactoring for Hibernate 4
+      ServiceRegistry serviceRegistry = dbPersistenceServiceFactory.getServiceRegistry();
+      ConnectionProvider connectionProvider = serviceRegistry.getService(ConnectionProvider.class);
       connection = connectionProvider.getConnection();
       Statement statement = connection.createStatement();
       log("shutting down database");

@@ -33,7 +33,7 @@ import org.apache.tools.ant.Task;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.hbm2ddl.SchemaUpdate;
-import org.hibernate.util.ConfigHelper;
+// import org.hibernate.util.ConfigHelper; // Replaced by classloader
 
 public class JbpmSchemaTask extends Task
 {
@@ -109,7 +109,8 @@ public class JbpmSchemaTask extends Task
 
     if (properties != null)
     {
-      InputStream inStream = ConfigHelper.getResourceAsStream(properties);
+      // InputStream inStream = ConfigHelper.getResourceAsStream(properties);
+      InputStream inStream = JbpmSchemaTask.class.getClassLoader().getResourceAsStream(properties);
       if (inStream == null)
         throw new IllegalArgumentException("Cannot read properties: " + properties);
 

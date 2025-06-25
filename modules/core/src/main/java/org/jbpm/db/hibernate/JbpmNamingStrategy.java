@@ -21,60 +21,54 @@
  */
 package org.jbpm.db.hibernate;
 
-import org.hibernate.cfg.*;
+import org.hibernate.boot.model.naming.Identifier;
+import org.hibernate.boot.model.naming.PhysicalNamingStrategy;
+import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
 
-public class JbpmNamingStrategy implements NamingStrategy {
+public class JbpmNamingStrategy implements PhysicalNamingStrategy {
 
-  public String classToTableName(String className) {
-    className = className.substring(className.lastIndexOf('.')+1);
-    return "JBPM_"+className.toUpperCase();
-  }
+    public static final JbpmNamingStrategy INSTANCE = new JbpmNamingStrategy();
 
-  public String propertyToColumnName(String propertyName) {
-    return propertyName.toUpperCase()+"_";
-  }
+    @Override
+    public Identifier toPhysicalCatalogName(Identifier name, JdbcEnvironment jdbcEnvironment) {
+        // jBPM 3 did not typically specify catalogs, defer to default
+        return name;
+    }
 
-  public String tableName(String tableName) {
-    return "JBPM_"+tableName;
-  }
+    @Override
+    public Identifier toPhysicalSchemaName(Identifier name, JdbcEnvironment jdbcEnvironment) {
+        // jBPM 3 did not typically specify schemas, defer to default
+        return name;
+    }
 
-  public String columnName(String columnName) {
-    return columnName+"_";
-  }
+    @Override
+    public Identifier toPhysicalTableName(Identifier name, JdbcEnvironment jdbcEnvironment) {
+        if (name == null) {
+            return null;
+        }
+        final String newName = "JBPM_" + name.getText().toUpperCase();
+        return Identifier.toIdentifier(newName, name.isQuoted());
+    }
 
-  public String propertyToTableName(String className, String propertyName) {
-    return classToTableName(className)+"_"+propertyName.toUpperCase();
-  }
+    @Override
+    public Identifier toPhysicalSequenceName(Identifier name, JdbcEnvironment jdbcEnvironment) {
+        // jBPM 3 did not explicitly manage sequences with this strategy,
+        // but if it did, it would likely follow table naming.
+        if (name == null) {
+            return null;
+        }
+        final String newName = "JBPM_" + name.getText().toUpperCase();
+        return Identifier.toIdentifier(newName, name.isQuoted());
+    }
 
-  public String collectionTableName(String ownerEntityTable, String associatedEntityTable, String propertyName) {
-    return null;
-  }
-
-  public String joinKeyColumnName(String joinedColumn, String joinedTable) {
-    return null;
-  }
-
-  public String foreignKeyColumnName(String propertyName, String propertyTableName, String referencedColumnName) {
-    return null;
-  }
-
-  public String logicalColumnName(String columnName, String propertyName) {
-    return null;
-  }
-
-  public String logicalCollectionTableName(String tableName, String ownerEntityTable, String associatedEntityTable, String propertyName) {
-    return null;
-  }
-
-  public String logicalCollectionColumnName(String columnName, String propertyName, String referencedColumn) {
-    return null;
-  }
-
-  public String collectionTableName(String arg0, String arg1, String arg2, String arg3, String arg4) {
-    return null;
-  }
-
-  public String foreignKeyColumnName(String arg0, String arg1, String arg2, String arg3) {
-    return null;
-  }
+    @Override
+    public Identifier toPhysicalColumnName(Identifier name, JdbcEnvironment jdbcEnvironment) {
+        if (name == null) {
+            return null;
+        }
+        // The old strategy added a trailing underscore.
+        // It also uppercased.
+        final String newName = name.getText().toUpperCase() + "_";
+        return Identifier.toIdentifier(newName, name.isQuoted());
+    }
 }

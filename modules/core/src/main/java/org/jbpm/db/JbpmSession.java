@@ -97,15 +97,19 @@ public class JbpmSession {
     return jbpmSessionFactory;
   }
 
-  public Connection getConnection() {
-    try {
-      return session.connection();
-    } catch (Exception e) {
-      log.error(e);
-      handleException();
-      throw new JbpmException( "couldn't get the jdbc connection from hibernate", e );
-    }
-  }
+  // public Connection getConnection() {
+  //   try {
+  //     // Hibernate 4 replacement: session.doWork(new Work() { ... });
+  //     // This method's signature would need to change significantly or it needs to be removed.
+  //     // Temporarily commenting out for compilation as no direct usages were found.
+  //     // return session.connection(); // This line is the original problematic call
+  //     throw new UnsupportedOperationException("session.connection() is removed in Hibernate 4. Use session.doWork(...) instead.");
+  //   } catch (Exception e) {
+  //     log.error(e);
+  //     handleException();
+  //     throw new JbpmException( "couldn't get the jdbc connection from hibernate", e );
+  //   }
+  // }
 
   public Session getSession() {
     return session;

@@ -86,7 +86,7 @@ public class Join extends Node implements Parsable {
   public void read(Element element, JpdlXmlReader jpdlReader) {
     String lock = element.attributeValue("lock");
     if (lock != null) {
-      LockMode lockMode = LockMode.parse(lock);
+      LockMode lockMode = LockMode.valueOf(lock.toUpperCase());
       if (lockMode != null)
         parentLockMode = lockMode.toString();
       else if ("pessimistic".equals(lock))
@@ -121,7 +121,7 @@ public class Join extends Node implements Parsable {
         Session session = (jbpmContext!=null ? jbpmContext.getSession() : null);
         if (session!=null) {
           // force version increment by default (LockMode.FORCE)
-          LockMode lockMode = parentLockMode != null ? LockMode.parse(parentLockMode) : LockMode.FORCE;
+          LockMode lockMode = parentLockMode != null ? LockMode.valueOf(parentLockMode.toUpperCase()) : LockMode.FORCE;
           log.debug("acquiring " + lockMode + " lock on " + parentToken);
           // lock updates as appropriate, no need to flush here
           session.lock(parentToken, lockMode);

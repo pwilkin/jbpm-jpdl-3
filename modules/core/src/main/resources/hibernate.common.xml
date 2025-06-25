@@ -22,8 +22,8 @@
     <property name="hibernate.hbm2ddl.auto">create</property>
     <!-- Automatic schema creation (end) -->
     
-    <!-- Simple memory-only cache -->
-    <property name="hibernate.cache.provider_class">org.hibernate.cache.HashtableCacheProvider</property>
+    <!-- Simple memory-only cache (Disabling for Hibernate 5 migration as HashtableCacheProvider is removed) -->
+    <!-- <property name="hibernate.cache.provider_class">org.hibernate.cache.HashtableCacheProvider</property> -->
 
     <!-- logging properties --> 
     <property name="hibernate.format_sql">true</property>

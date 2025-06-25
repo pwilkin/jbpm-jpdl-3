@@ -52,18 +52,18 @@
     <commons.io.version>1.4</commons.io.version>
     <commons.logging.version>1.1.1</commons.logging.version>
     <desmoj.version>2.1.1</desmoj.version>
-    <dom4j.version>1.6.1</dom4j.version>
+    <dom4j.version>1.6.1</dom4j.version> <!-- Hibernate 5 still uses dom4j but consider if this specific version is optimal -->
     <drools.version>4.0.7</drools.version>
     <dumbster.version>1.6</dumbster.version>
-    <hibernate.version>3.6.10.Final</hibernate.version>
-    <hibernate.commons.annotations.version>3.2.0.Final</hibernate.commons.annotations.version>
-    <hibernate.validator.version>4.1.0.Final</hibernate.validator.version>
+    <hibernate.version>5.4.33.Final</hibernate.version>
+    <!--hibernate.commons.annotations.version>3.2.0.Final</hibernate.commons.annotations.version--> <!-- Not needed for H4+ -->
+    <hibernate.validator.version>6.0.23.Final</hibernate.validator.version> <!-- Validator 6.x for Hibernate 5.x -->
     <izpack.version>4.1.0</izpack.version>
     <jasper.reports.version>3.0.0</jasper.reports.version>
     <javax.ejb.version>3.0</javax.ejb.version>
     <javax.el.version>1.2</javax.el.version>
     <javax.faces.version>1.2_03</javax.faces.version>
-    <javax.jcr.version>1.0.1</javax.jcr.version>
+    <javax.jcr.version>1.0</javax.jcr.version>
     <javax.jms.version>1.1</javax.jms.version>
     <javax.jws.version>1.0-MR1</javax.jws.version>
     <javax.mail.version>1.4</javax.mail.version>
@@ -329,11 +329,6 @@
       </dependency>
       <dependency>
         <groupId>org.hibernate</groupId>
-        <artifactId>hibernate-commons-annotations</artifactId>
-        <version>${hibernate.commons.annotations.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.hibernate</groupId>
         <artifactId>hibernate-validator</artifactId>
         <version>${hibernate.validator.version}</version>
       </dependency>
@@ -413,11 +408,12 @@
         <artifactId>poi-scratchpad</artifactId>
         <version>${poi.version}</version>
       </dependency>
-      <dependency>
+      <!-- cglib and javassist are managed by Hibernate 5.x -->
+      <!-- <dependency>
 		<groupId>cglib</groupId>
 		<artifactId>cglib</artifactId>
 		<version>2.2.2</version>
-	  </dependency>
+	  </dependency> -->
 
       <!-- Database Driver Versions  -->
       <dependency>
@@ -440,6 +436,11 @@
         <artifactId>jtds</artifactId>
         <version>${jtds.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.glassfish.corba</groupId>
+        <artifactId>glassfish-corba-omgapi</artifactId>
+        <version>4.1.0</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -459,11 +460,36 @@
 
   <!-- Plugins -->
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>3.3.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.8.1</version> <!-- Updated from 3.1 to align with modules/core and Java 8 -->
+          <configuration>
+            <source>1.8</source>
+            <target>1.8</target>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <!-- Version and configuration will be inherited from pluginManagement -->
+      </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <testFailureIgnore>false</testFailureIgnore>
+          <systemPropertyVariables>
+            <java.rmi.server.useCodebaseOnly>false</java.rmi.server.useCodebaseOnly>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
     </plugins>
@@ -473,7 +499,10 @@
   <repositories>
     <repository>
       <id>repository.jboss.org</id>
-      <url>http://repository.jboss.org/maven2</url>
+      <url>https://repository.jboss.org/maven2</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
     </repository>
   </repositories>
 
@@ -643,7 +672,10 @@
       <repositories>
         <repository>
           <id>qa.jboss.com</id>
-          <url>http://www.qa.jboss.com/jdbc-drivers/maven2</url>
+          <url>https://www.qa.jboss.com/jdbc-drivers/maven2</url>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
         </repository>
       </repositories>
     </profile>

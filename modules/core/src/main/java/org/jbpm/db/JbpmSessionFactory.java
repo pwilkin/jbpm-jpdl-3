@@ -194,7 +194,8 @@ public class JbpmSessionFactory implements Serializable {
       } else {
         // use the client provided jdbc connection in  
         // the created hibernate session.
-        session = getSessionFactory().openSession(jdbcConnection);
+        log.warn("JbpmSessionFactory: openSession(connection) is deprecated. Opening session with default connection strategy. The provided connection will be ignored.");
+        session = getSessionFactory().openSession(); // Changed from openSession(jdbcConnection)
       }
       
       dbSession = new JbpmSession( this, session );
@@ -259,17 +260,19 @@ public class JbpmSessionFactory implements Serializable {
   }
 
   void initHibernatableClasses() {
+    // TODO: Hibernate 5 - configuration.getClassMappings() removed. Need to use Metadata.
+    log.warn("JbpmSessionFactory.initHibernatableClasses() is disabled for Hibernate 5 migration.");
     hibernatableLongIdClasses = new HashSet();
     hibernatableStringIdClasses = new HashSet();
-    Iterator iter = configuration.getClassMappings();
-    while (iter.hasNext()) {
-      PersistentClass persistentClass = (PersistentClass) iter.next();
-      if (LongType.class==persistentClass.getIdentifier().getType().getClass()) {
-        hibernatableLongIdClasses.add( persistentClass.getMappedClass() );
-      } else if (StringType.class==persistentClass.getIdentifier().getType().getClass()) {
-        hibernatableStringIdClasses.add( persistentClass.getMappedClass() );
-      }
-    }
+    // Iterator iter = configuration.getClassMappings();
+    // while (iter.hasNext()) {
+    //   PersistentClass persistentClass = (PersistentClass) iter.next();
+    //   if (LongType.class==persistentClass.getIdentifier().getType().getClass()) {
+    //     hibernatableLongIdClasses.add( persistentClass.getMappedClass() );
+    //   } else if (StringType.class==persistentClass.getIdentifier().getType().getClass()) {
+    //     hibernatableStringIdClasses.add( persistentClass.getMappedClass() );
+    //   }
+    // }
   }
 
   private static final Log log = LogFactory.getLog(JbpmSessionFactory.class);

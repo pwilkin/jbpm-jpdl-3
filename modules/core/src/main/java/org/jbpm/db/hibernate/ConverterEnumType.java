@@ -25,6 +25,7 @@ import java.io.*;
 import java.sql.*;
 
 import org.hibernate.*;
+import org.hibernate.engine.spi.SharedSessionContractImplementor; // Changed for Hibernate 5
 import org.hibernate.usertype.*;
 import org.jbpm.context.exe.*;
 
@@ -46,13 +47,20 @@ public class ConverterEnumType implements UserType {
   public int[] sqlTypes() { return SQLTYPES; }
   public Class returnedClass() { return Converter.class; }
 
-  public Object nullSafeGet(ResultSet resultSet, String[] names, Object owner) throws HibernateException, SQLException {
+  public Object nullSafeGet(ResultSet resultSet, String[] names, SharedSessionContractImplementor session, Object owner) throws HibernateException, SQLException {
     String converterDatabaseId = resultSet.getString(names[0]);
+    if (resultSet.wasNull()) { // Good practice to check for null
+        return null;
+    }
     return Converters.getConverterByDatabaseId(converterDatabaseId);
   }
 
-  public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index) throws HibernateException, SQLException {
-    String converterDatabaseId = Converters.getConverterId((Converter) value);
-    preparedStatement.setString(index, converterDatabaseId);
+  public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index, SharedSessionContractImplementor session) throws HibernateException, SQLException {
+    if (value == null) {
+      preparedStatement.setNull(index, SQLTYPES[0]);
+    } else {
+      String converterDatabaseId = Converters.getConverterId((Converter) value);
+      preparedStatement.setString(index, converterDatabaseId);
+    }
   }
 }

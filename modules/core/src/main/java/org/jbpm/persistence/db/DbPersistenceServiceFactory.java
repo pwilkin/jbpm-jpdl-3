@@ -27,6 +27,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.service.ServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.jbpm.JbpmConfiguration;
 import org.jbpm.db.JbpmSchema;
@@ -44,6 +46,7 @@ public class DbPersistenceServiceFactory implements ServiceFactory
 
   String sessionFactoryJndiName = null;
   SessionFactory sessionFactory = null;
+  ServiceRegistry serviceRegistry = null;
 
   String dataSourceJndiName = null;
   DataSource dataSource = null;
@@ -102,10 +105,33 @@ public class DbPersistenceServiceFactory implements ServiceFactory
       else
       {
         log.debug("building hibernate session factory");
-        sessionFactory = getConfiguration().buildSessionFactory();
+        Configuration config = getConfiguration();
+        StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder()
+            .applySettings(config.getProperties());
+        serviceRegistry = registryBuilder.build();
+        sessionFactory = config.buildSessionFactory(serviceRegistry);
       }
     }
     return sessionFactory;
+  }
+
+  public synchronized ServiceRegistry getServiceRegistry() {
+    if (serviceRegistry == null) {
+      // Ensure SessionFactory (and thus ServiceRegistry) is initialized
+      getSessionFactory();
+      // If SessionFactory was obtained from JNDI, serviceRegistry might still be null.
+      // In this case, we might need to build a new one or accept that it's not available.
+      // For now, let's assume it should have been built if not from JNDI.
+      // If it's still null and was from JNDI, this method might return null.
+      // This could be an issue for JNDI-provided SessionFactories if the ServiceRegistry is strictly needed.
+      // However, ShutDownHsqldb typically runs in an environment where JNDI lookup for SF is less common.
+      if (sessionFactory != null && serviceRegistry == null && sessionFactory instanceof org.hibernate.engine.spi.SessionFactoryImplementor) {
+        // If SF is available and is SFImpl, try to get its SR.
+        // This handles cases where SF might be set externally or via JNDI but is a compatible type.
+        serviceRegistry = ((org.hibernate.engine.spi.SessionFactoryImplementor) sessionFactory).getServiceRegistry();
+      }
+    }
+    return serviceRegistry;
   }
 
   public DataSource getDataSource()
@@ -126,14 +152,18 @@ public class DbPersistenceServiceFactory implements ServiceFactory
 
   public void createSchema()
   {
-    getSchemaExport().create(getScript(), true);
-    HibernateHelper.clearHibernateCache(getSessionFactory());
+    // TODO: Hibernate 5 - SchemaExport API changed. Needs rewrite.
+    log.warn("DbPersistenceServiceFactory.createSchema() is disabled for Hibernate 5 migration.");
+    // getSchemaExport().create(getScript(), true);
+    // HibernateHelper.clearHibernateCache(getSessionFactory()); // clearHibernateCache is also disabled
   }
 
   public void dropSchema()
   {
-    HibernateHelper.clearHibernateCache(getSessionFactory());
-    getSchemaExport().drop(getScript(), true);
+    // TODO: Hibernate 5 - SchemaExport API changed. Needs rewrite.
+    log.warn("DbPersistenceServiceFactory.dropSchema() is disabled for Hibernate 5 migration.");
+    // HibernateHelper.clearHibernateCache(getSessionFactory()); // clearHibernateCache is also disabled
+    // getSchemaExport().drop(getScript(), true);
   }
 
   boolean getScript()

@@ -24,10 +24,11 @@ package org.jbpm.persistence.jta;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
+import javax.transaction.Status;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.engine.SessionFactoryImplementor;
-import org.hibernate.util.JTAHelper;
+// import org.hibernate.engine.spi.SessionFactoryImplementor; // No longer directly used it seems
+import org.hibernate.resource.transaction.spi.TransactionStatus; // Hibernate 4+ transaction status
 import org.jbpm.JbpmException;
 import org.jbpm.persistence.db.DbPersistenceService;
 
@@ -64,8 +65,30 @@ public class JtaDbPersistenceService extends DbPersistenceService {
   }
 
   boolean isJtaTransactionInProgress() {
-    SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor) getSessionFactory();
-    return JTAHelper.isTransactionInProgress(sessionFactory);
+    if (userTransaction != null) {
+        try {
+            int status = userTransaction.getStatus();
+            // Check against standard JTA status codes
+            return (status == Status.STATUS_ACTIVE ||
+                    status == Status.STATUS_COMMITTING ||
+                    status == Status.STATUS_MARKED_ROLLBACK ||
+                    status == Status.STATUS_PREPARED ||
+                    status == Status.STATUS_PREPARING ||
+                    status == Status.STATUS_ROLLING_BACK);
+        } catch (SystemException e) {
+            throw new JbpmException("could not get JTA user transaction status", e);
+        }
+    } else {
+        // Check if a JTA transaction is managed externally by looking at the Hibernate session's transaction status
+        if (session != null && session.getTransaction() != null && session.getTransaction().isActive()) { // Ensure transaction is active before checking status
+            org.hibernate.resource.transaction.spi.TransactionStatus transactionStatus = session.getTransaction().getStatus();
+            return transactionStatus == org.hibernate.resource.transaction.spi.TransactionStatus.ACTIVE ||
+                   transactionStatus == org.hibernate.resource.transaction.spi.TransactionStatus.COMMITTING ||
+                   transactionStatus == org.hibernate.resource.transaction.spi.TransactionStatus.MARKED_ROLLBACK;
+                   // PREPARING and PREPARED are not typical for this check from Hibernate's perspective without UserTransaction
+        }
+        return false; // No UserTransaction and no active Hibernate transaction implies not in progress
+    }
   }
 
   void beginUserTransaction() {
@@ -80,7 +103,7 @@ public class JtaDbPersistenceService extends DbPersistenceService {
   }
 
   void endUserTransaction() {
-    if (isRollbackOnly() || JTAHelper.isRollback(getUserTransactionStatus())) {
+    if (isRollbackOnly() || (userTransaction != null && getUserTransactionStatus() == Status.STATUS_MARKED_ROLLBACK) ) {
       log.debug("rolling back user transaction");
       try {
         userTransaction.rollback();

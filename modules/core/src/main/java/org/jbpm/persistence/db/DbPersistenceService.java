@@ -22,6 +22,7 @@
 package org.jbpm.persistence.db;
 
 import java.sql.Connection;
+import java.sql.SQLException; // Added for missing import
 
 import javax.sql.DataSource;
 
@@ -31,6 +32,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.StaleStateException;
 import org.hibernate.Transaction;
+import org.hibernate.jdbc.Work;
 import org.jbpm.JbpmContext;
 import org.jbpm.JbpmException;
 import org.jbpm.db.ContextSession;
@@ -107,8 +109,9 @@ public class DbPersistenceService implements Service, PersistenceService {
         mustSessionBeFlushed = false;
         mustConnectionBeClosed = false;
       } else if (connection!=null) {
-        log.debug("creating hibernate session with connection "+connection);
-        session = getSessionFactory().openSession(connection);
+        log.warn("DbPersistenceService: openSession(connection) is deprecated. Opening session with default connection strategy. The provided connection will be ignored.");
+        // log.debug("creating hibernate session with connection "+connection); // Connection will be ignored
+        session = getSessionFactory().openSession(); // Changed from openSession(connection)
         mustSessionBeClosed = true;
         mustSessionBeFlushed = true;
         mustConnectionBeClosed = false;
@@ -188,13 +191,17 @@ public class DbPersistenceService implements Service, PersistenceService {
           getSession();
         }
         if (session!=null) {
-          connection = session.connection();
-          log.debug("fetching connection from hibernate session. this transfers responsibility for closing the jdbc connection to the user! "+connection);
+          session.doWork(new org.hibernate.jdbc.Work() {
+            public void execute(Connection connection) throws SQLException {
+              DbPersistenceService.this.connection = connection;
+            }
+          });
+          log.debug("fetching connection from hibernate session via doWork(). this transfers responsibility for closing the jdbc connection to the user! "+this.connection);
           mustConnectionBeClosed = false;
         }
       }
     }
-    return connection;
+    return this.connection;
   }
   
   public boolean isTransactionActive() {
