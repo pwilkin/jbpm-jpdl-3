@@ -94,7 +94,7 @@ public class RulesAssignmentHandler implements AssignmentHandler
   {
     Query query = session.createQuery("select g " + "from org.jbpm.identity.Group as g " + "where g.name = :groupName");
     log.debug("groupName is: " + groupName);
-    query.setString("groupName", groupName);
+    query.setParameter("groupName", groupName);
     return query.list();
   }
 

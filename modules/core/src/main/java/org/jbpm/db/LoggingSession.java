@@ -28,7 +28,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.hibernate.Session;
 import org.jbpm.JbpmException;
 import org.jbpm.graph.exe.ProcessInstance;
@@ -89,7 +89,7 @@ public class LoggingSession {
     try {
       Token token = (Token) session.load(Token.class, new Long(tokenId));
       Query query = session.getNamedQuery("LoggingSession.findLogsByToken");
-      query.setEntity("token", token);
+      query.setParameter("token", token);
       result = query.list();
     } catch (Exception e) {
       log.error(e);

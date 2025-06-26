@@ -65,8 +65,8 @@ public class IdentitySession implements IdentityService, ExpressionSession
   {
     Object userId = null;
     Query query = session.createQuery("select user.id " + "from org.jbpm.identity.User as user where user.name = :userName and user.password = :password");
-    query.setString("userName", userName);
-    query.setString("password", pwd);
+    query.setParameter("userName", userName);
+    query.setParameter("password", pwd);
     userId = (Long)query.uniqueResult();
     return userId;
   }
@@ -209,7 +209,7 @@ public class IdentitySession implements IdentityService, ExpressionSession
   {
     User user = null;
     Query query = session.createQuery("select u " + "from org.jbpm.identity.User as u " + "where u.name = :userName");
-    query.setString("userName", userName);
+    query.setParameter("userName", userName);
     List users = query.list();
     if ((users != null) && (users.size() > 0))
     {
@@ -222,7 +222,7 @@ public class IdentitySession implements IdentityService, ExpressionSession
   {
     Group group = null;
     Query query = session.createQuery("select g " + "from org.jbpm.identity.Group as g " + "where g.name = :groupName");
-    query.setString("groupName", groupName);
+    query.setParameter("groupName", groupName);
     List groups = query.list();
     if ((groups != null) && (groups.size() > 0))
     {
@@ -241,8 +241,8 @@ public class IdentitySession implements IdentityService, ExpressionSession
   {
     Query query = session.createQuery("select membership.group.name from org.jbpm.identity.Membership as membership where membership.user.name = :userName "
         + "  and membership.group.type = :groupType");
-    query.setString("userName", userName);
-    query.setString("groupType", groupType);
+    query.setParameter("userName", userName);
+    query.setParameter("groupType", groupType);
     return query.list();
   }
 
@@ -250,8 +250,8 @@ public class IdentitySession implements IdentityService, ExpressionSession
   {
     User user = null;
     Query query = session.createQuery("select m.user " + "from org.jbpm.identity.Membership as m where m.group.name = :groupName and m.role = :role");
-    query.setString("groupName", groupName);
-    query.setString("role", role);
+    query.setParameter("groupName", groupName);
+    query.setParameter("role", role);
     user = (User)query.uniqueResult();
     return user;
   }

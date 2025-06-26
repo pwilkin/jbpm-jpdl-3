@@ -211,8 +211,8 @@ public class CustomTaskInstanceTest extends TestCase
     List<CustomTaskInstance> taskList = null;
     s = jbpmContext.getSession();
     Query query = s.createQuery(findPooledTaskInstancesByCustomId);
-    query.setString("pooledActorId", actorId);
-    query.setString("customId", customId);
+    query.setParameter("pooledActorId", actorId);
+    query.setParameter("customId", customId);
     taskList = query.list();
     return taskList;
   }

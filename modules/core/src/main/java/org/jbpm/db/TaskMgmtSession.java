@@ -29,7 +29,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.hibernate.Session;
 import org.jbpm.JbpmException;
 import org.jbpm.graph.exe.ProcessInstance;
@@ -59,7 +59,7 @@ public class TaskMgmtSession implements Serializable {
     List result = null;
     try {
       Query query = session.getNamedQuery("TaskMgmtSession.findTaskInstancesByActorId");
-      query.setString("actorId", actorId);
+      query.setParameter("actorId", actorId);
       result = query.list();
     } catch (Exception e) {
       log.error(e);
@@ -102,7 +102,7 @@ public class TaskMgmtSession implements Serializable {
     List result = null;
     try {
       Query query = session.getNamedQuery("TaskMgmtSession.findPooledTaskInstancesByActorId");
-      query.setString("swimlaneActorId", actorId);
+      query.setParameter("swimlaneActorId", actorId);
       List identifiers = query.list();
       if (!identifiers.isEmpty()) {
         result = new ArrayList(identifiers.size());
@@ -156,7 +156,7 @@ public class TaskMgmtSession implements Serializable {
     List result = null;
     try {
       Query query = session.getNamedQuery("TaskMgmtSession.findTaskInstancesByTokenId");
-      query.setLong("tokenId", tokenId);
+      query.setParameter("tokenId", tokenId);
       result = query.list();
     } catch (Exception e) {
       log.error(e);
@@ -173,7 +173,7 @@ public class TaskMgmtSession implements Serializable {
     List result = null;
     try {
       Query query = session.getNamedQuery("TaskMgmtSession.findTaskInstancesByProcessInstance");
-      query.setEntity("processInstance", processInstance);
+      query.setParameter("processInstance", processInstance);
       result = query.list();
     } catch (Exception e) {
       log.error(e);

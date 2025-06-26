@@ -27,9 +27,11 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.hibernate.Session;
-import org.hibernate.criterion.Restrictions;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import org.jbpm.JbpmException;
 import org.jbpm.graph.def.Action;
 import org.jbpm.graph.exe.ProcessInstance;
@@ -49,8 +51,8 @@ public class JobSession {
     Job job = null;
     try {
       Query query = session.getNamedQuery("JobSession.getFirstAcquirableJob");
-      query.setString("lockOwner", lockOwner);
-      query.setTimestamp("now", new Date());
+      query.setParameter("lockOwner", lockOwner);
+      query.setParameter("now", new Date());
       query.setMaxResults(1);
       job = (Job) query.uniqueResult();
 
@@ -65,8 +67,8 @@ public class JobSession {
     List jobs = null;
     try {
       Query query = session.getNamedQuery("JobSession.findExclusiveJobs");
-      query.setString("lockOwner", lockOwner);
-      query.setTimestamp("now", new Date());
+      query.setParameter("lockOwner", lockOwner);
+      query.setParameter("now", new Date());
       query.setParameter("processInstance", processInstance);
       jobs = query.list();
 
@@ -99,11 +101,11 @@ public class JobSession {
            || (jobIdsToIgnore.isEmpty() )
          ) {
         query = session.getNamedQuery("JobSession.getFirstDueJob");
-        query.setString("lockOwner", lockOwner);
+        query.setParameter("lockOwner", lockOwner);
         
       } else {
         query = session.getNamedQuery("JobSession.getFirstDueJobExlcMonitoredJobs");
-        query.setString("lockOwner", lockOwner);
+        query.setParameter("lockOwner", lockOwner);
         query.setParameterList("jobIdsToIgnore", jobIdsToIgnore);
         
       }
@@ -151,15 +153,16 @@ public class JobSession {
     }
   }
 
-  public List loadJobs(long[] jobIds) {
-    int jobCount = jobIds.length;
-    Long[] jobs = new Long[jobCount];
-    for (int i = 0; i < jobCount; i++) {
-      jobs[i] = new Long(jobIds[i]);
+  public List<Job> loadJobs(long[] jobIds) {
+    List<Long> jobIdsList = new java.util.ArrayList<>(jobIds.length);
+    for (long id : jobIds) {
+      jobIdsList.add(id);
     }
-    return session.createCriteria(Job.class)
-      .add(Restrictions.in("id", jobs))
-      .list();
+    CriteriaBuilder cb = session.getCriteriaBuilder();
+    CriteriaQuery<Job> cq = cb.createQuery(Job.class);
+    Root<Job> root = cq.from(Job.class);
+    cq.where(root.get("id").in(jobIdsList));
+    return session.createQuery(cq).getResultList();
   }
 
   public Job getJob(long jobId) {
@@ -199,7 +202,7 @@ public class JobSession {
     try {
       log.debug("deleting timers by name '" + name + "' for " + token);
       Query query = session.getNamedQuery("JobSession.deleteTimersByName");
-      query.setString("name", name);
+      query.setParameter("name", name);
       query.setParameter("token", token);
       int entityCount = query.executeUpdate();
       log.debug(entityCount + " timers by name '" + name + "' for " + token + " were deleted");
@@ -226,7 +229,7 @@ public class JobSession {
 
   public List findJobsWithOverdueLockTime(Date treshold) {
     Query query = session.getNamedQuery("JobSession.findJobsWithOverdueLockTime");
-    query.setDate("now", treshold);
+    query.setParameter("now", treshold);
     return query.list();
   }
 

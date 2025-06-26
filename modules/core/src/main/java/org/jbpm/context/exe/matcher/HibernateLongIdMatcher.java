@@ -26,7 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.SessionFactory;
 import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.proxy.HibernateProxy;
-import org.hibernate.type.LongType;
+import org.hibernate.type.StandardBasicTypes;
 import org.jbpm.JbpmContext;
 import org.jbpm.context.exe.JbpmTypeMatcher;
 
@@ -46,9 +46,9 @@ public class HibernateLongIdMatcher implements JbpmTypeMatcher {
       
       SessionFactory sessionFactory = jbpmContext.getSessionFactory();
       if (sessionFactory!=null) {
-        ClassMetadata classMetadata = sessionFactory.getClassMetadata(valueClass);
+        jakarta.persistence.metamodel.EntityType<?> classMetadata = sessionFactory.getMetamodel().entity(valueClass);
         matches =  ( (classMetadata!=null)
-                     && (classMetadata.getIdentifierType().getClass()==LongType.class)
+                     && (classMetadata.getIdType().getJavaType()==Long.class)
                    );
       }
     } else {

@@ -90,11 +90,11 @@
               <goal>run</goal>
             </goals>
             <configuration>
-              <tasks>
+              <target name="jbpmschema-tasks">
                 <property name="maven.runtime.classpath" refid="maven.runtime.classpath" />
                 <ant antfile="scripts/antrun-jbpmschema.xml" target="create-schema" />
                 <ant antfile="scripts/antrun-jbpmschema.xml" target="update-schema" />
-              </tasks>
+              </target>
             </configuration>
           </execution>
         </executions>

@@ -18,9 +18,7 @@
 
     <!-- echo message="${maven.runtime.classpath}"/ -->
       
-    <taskdef name="jbpmschema" classname="org.jbpm.ant.JbpmSchemaTask">
-      <classpath path="${maven.runtime.classpath}"/>
-    </taskdef>
+    
 
     <property name="scriptsdir" value="${basedir}/target/classes"/>
     <mkdir dir="${scriptsdir}"/>
@@ -29,19 +27,71 @@
 
   <target name="create-schema" depends="setup-schema" description="Generate jBPM Database Schemas">
 
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.db2.sql" config="hibernate.cfg.db2.xml" action="create"/>
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.derby.sql" config="hibernate.cfg.derby.xml" action="create"/>
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.firebird.sql" config="hibernate.cfg.firebird.xml" action="create"/>
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.hsqldb.sql" config="hibernate.cfg.hsqldb.xml" action="create"/>
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.ingres.sql" config="hibernate.cfg.ingres.xml" action="create"/>
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.interbase.sql" config="hibernate.cfg.interbase.xml" action="create"/>
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.mckoi.sql" config="hibernate.cfg.mckoi.xml" action="create"/>
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.mssql.sql" config="hibernate.cfg.mssql.xml" action="create"/>
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.mysql.sql" config="hibernate.cfg.mysql.xml" action="create" delimiter=";"/>
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.oracle.sql" config="hibernate.cfg.oracle.xml" action="create" delimiter=";"/>
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.postgresql.sql" config="hibernate.cfg.postgresql.xml" action="create"/>
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.sapdb.sql" config="hibernate.cfg.sapdb.xml" action="create"/>
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.sybase.sql" config="hibernate.cfg.sybase.xml" action="create"/>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="create"/>
+      <arg value="hibernate.cfg.db2.xml"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="create"/>
+      <arg value="hibernate.cfg.derby.xml"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="create"/>
+      <arg value="hibernate.cfg.firebird.xml"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="create"/>
+      <arg value="hibernate.cfg.hsqldb.xml"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="create"/>
+      <arg value="hibernate.cfg.ingres.xml"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="create"/>
+      <arg value="hibernate.cfg.interbase.xml"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="create"/>
+      <arg value="hibernate.cfg.mckoi.xml"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="create"/>
+      <arg value="hibernate.cfg.mssql.xml"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="create"/>
+      <arg value="hibernate.cfg.mysql.xml"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="create"/>
+      <arg value="hibernate.cfg.oracle.xml"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="create"/>
+      <arg value="hibernate.cfg.postgresql.xml"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="create"/>
+      <arg value="hibernate.cfg.sapdb.xml"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="create"/>
+      <arg value="hibernate.cfg.sybase.xml"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
    
     <!--[JBPM-1813] Fix create schema generation -->
     <!--jbpmschema output="${scriptsdir}/jbpm.jpdl.informix.sql" config="hibernate.cfg.informix.xml" action="create"/-->
@@ -52,8 +102,22 @@
   
   <target name="update-schema" depends="setup-schema" description="Generate jBPM Database Update Scripts">
   
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.mysql.update322.sql" config="hibernate.cfg.mysql.xml" properties="mysql.properties" action="update" delimiter=";"/>
-    <jbpmschema output="${scriptsdir}/jbpm.jpdl.sybase.update322.sql" config="hibernate.cfg.sybase.xml" properties="sybase.properties" action="update" delimiter=";"/>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="scripts"/>
+      <arg value="${scriptsdir}"/>
+      <arg value="jbpm.jpdl.mysql"/>
+      <arg value="hibernate.cfg.mysql.xml"/>
+      <arg value="mysql.properties"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
+    <java classname="org.jbpm.db.JbpmSchema" fork="true">
+      <arg value="scripts"/>
+      <arg value="${scriptsdir}"/>
+      <arg value="jbpm.jpdl.sybase"/>
+      <arg value="hibernate.cfg.sybase.xml"/>
+      <arg value="sybase.properties"/>
+      <classpath path="${maven.runtime.classpath}"/>
+    </java>
    
   </target>
   

@@ -70,15 +70,15 @@ public class JmsMessageService implements MessageService {
       jobSession.saveJob(job);
       
       Message message = session.createMessage();
-      message.setLongProperty("jobId", job.getId());
+      message.setParameter("jobId", job.getId());
       if (job.getToken()!=null) {
-        message.setLongProperty("tokenId", job.getToken().getId());
+        message.setParameter("tokenId", job.getToken().getId());
       }
       if (job.getProcessInstance()!=null) {
-        message.setLongProperty("processInstanceId", job.getProcessInstance().getId());
+        message.setParameter("processInstanceId", job.getProcessInstance().getId());
       }
       if (job.getTaskInstance()!=null) {
-        message.setLongProperty("taskInstanceId", job.getTaskInstance().getId());
+        message.setParameter("taskInstanceId", job.getTaskInstance().getId());
       }
       modifyMessage(message, job);
       getMessageProducer().send(message);

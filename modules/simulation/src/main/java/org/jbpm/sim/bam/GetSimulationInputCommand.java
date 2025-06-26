@@ -90,7 +90,7 @@ public class GetSimulationInputCommand extends GetProcessDefinitionCommand {
     Query decisionQuery = jbpmContext.getSession().getNamedQuery("Simulation.calculateProcessInstanceStartInterval");
   decisionQuery.setTime("fromTime", fromTimeOfDay);
   decisionQuery.setTime("tillTime", tillTimeOfDay);
-    decisionQuery.setLong("processDefinitionId", pd.getId());
+    decisionQuery.setParameter("processDefinitionId", pd.getId());
     
     Object[] o = (Object[]) decisionQuery.uniqueResult();
 
@@ -113,7 +113,7 @@ public class GetSimulationInputCommand extends GetProcessDefinitionCommand {
     Query decisionQuery = jbpmContext.getSession().getNamedQuery("Simulation.calculateAverageTimeForDecisions");
     decisionQuery.setTime("fromTime", fromTimeOfDay);
     decisionQuery.setTime("tillTime", tillTimeOfDay);
-    decisionQuery.setEntity("processDefinition", pd);
+    decisionQuery.setParameter("processDefinition", pd);
     
     Iterator decisionStatisticsIterator = decisionQuery.list().iterator();
     while (decisionStatisticsIterator.hasNext()) {
@@ -142,7 +142,7 @@ public class GetSimulationInputCommand extends GetProcessDefinitionCommand {
     
     nodeQuery.setTime("fromTime", fromTimeOfDay);
     nodeQuery.setTime("tillTime", tillTimeOfDay);
-    nodeQuery.setEntity("processDefinition", pd);
+    nodeQuery.setParameter("processDefinition", pd);
     
     Iterator nodeStatisticsIterator = nodeQuery.list().iterator();
     while (nodeStatisticsIterator.hasNext()) {
@@ -171,7 +171,7 @@ public class GetSimulationInputCommand extends GetProcessDefinitionCommand {
 
     nodeQuery.setTime("fromTime", fromTimeOfDay);
     nodeQuery.setTime("tillTime", tillTimeOfDay);
-    nodeQuery.setLong("processDefinitinId", pd.getId());
+    nodeQuery.setParameter("processDefinitinId", pd.getId());
     
     Iterator nodeStatisticsIterator = nodeQuery.list().iterator();
     while (nodeStatisticsIterator.hasNext()) {
@@ -196,7 +196,7 @@ public class GetSimulationInputCommand extends GetProcessDefinitionCommand {
   private void queryTransitionProbabilities(JbpmContext jbpmContext,
       long nodeId, ElementStatistics statistics) {
     Query transQuery = jbpmContext.getSession().getNamedQuery("Simulation.calculateLeavingTransitionProbability");
-    transQuery.setLong("nodeId", nodeId);
+    transQuery.setParameter("nodeId", nodeId);
     transQuery.setTime("fromTime", fromTimeOfDay);
     transQuery.setTime("tillTime", tillTimeOfDay);
     

@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.jbpm.JbpmContext;
 import org.jbpm.graph.exe.ProcessInstance;
 
@@ -107,30 +107,30 @@ public class GetProcessInstancesCommand extends AbstractGetObjectBaseCommand
 
     if (fromStartDate != null)
     {
-      query.setTimestamp("from", fromStartDate);
+      query.setParameter("from", fromStartDate);
     }
     if (untilStartDate != null)
     {
-      query.setTimestamp("until", untilStartDate);
+      query.setParameter("until", untilStartDate);
     }
 
     if (processInstanceId != -1)
     {
-      query.setLong("processId", processInstanceId);
+      query.setParameter("processId", processInstanceId);
     }
     if (processDefinitionName != null && processDefinitionName.length() > 0)
     {
-      query.setString("processDefinitionName", processDefinitionName);
+      query.setParameter("processDefinitionName", processDefinitionName);
     }
 
     if (stateName != null && stateName.length() > 0)
     {
-      query.setString("nodeName", stateName);
+      query.setParameter("nodeName", stateName);
     }
 
     if (version != null)
     {
-      query.setString("version", version);
+      query.setParameter("version", version);
     }
 
     return retrieveProcessInstanceDetails(query.list());

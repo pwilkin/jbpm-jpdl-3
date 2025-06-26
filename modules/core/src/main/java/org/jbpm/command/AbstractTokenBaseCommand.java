@@ -6,7 +6,7 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.jbpm.JbpmContext;
 import org.jbpm.graph.def.ProcessDefinition;
 import org.jbpm.graph.exe.Token;
@@ -71,13 +71,13 @@ public abstract class AbstractTokenBaseCommand implements Command
         Query query = null;
         if (processVersion>0) {
           query = jbpmContext.getSession().getNamedQuery("GraphSession.findTokensForProcessVersionInNode");        
-          query.setInteger("processDefinitionVersion", processVersion);
+          query.setParameter("processDefinitionVersion", processVersion);
         }
         else {
           query = jbpmContext.getSession().getNamedQuery("GraphSession.findTokensForProcessInNode");                
         }
-        query.setString("processDefinitionName", processName);
-        query.setString("nodeName", stateName);
+        query.setParameter("processDefinitionName", processName);
+        query.setParameter("nodeName", stateName);
   
         Iterator iter = query.list().iterator();
         while (iter.hasNext())

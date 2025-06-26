@@ -39,11 +39,12 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.mapping.PersistentClass;
-import org.hibernate.type.LongType;
-import org.hibernate.type.StringType;
+import org.hibernate.type.StandardBasicTypes;
 import org.jbpm.JbpmConfiguration;
 import org.jbpm.JbpmException;
 import org.jbpm.util.ClassLoaderUtil;
+import org.hibernate.service.ServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 
 /**
  * creates JbpmSessions.
@@ -164,7 +165,10 @@ public class JbpmSessionFactory implements Serializable {
     SessionFactory sessionFactory = null;
     // create the hibernate session factory
     log.debug("building hibernate session factory");
-    sessionFactory = configuration.buildSessionFactory();
+    ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
+      .applySettings(configuration.getProperties())
+      .build();
+    sessionFactory = configuration.buildSessionFactory(serviceRegistry);
     return sessionFactory;
   }
 
@@ -254,25 +258,23 @@ public class JbpmSessionFactory implements Serializable {
   
   public JbpmSchema getJbpmSchema() {
     if (jbpmSchema==null) {
-      jbpmSchema = new JbpmSchema(configuration);
+      ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(configuration.getProperties()).build();
+      org.hibernate.boot.Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
+      jbpmSchema = new JbpmSchema(metadata, serviceRegistry);
     }
     return jbpmSchema;
   }
 
   void initHibernatableClasses() {
-    // TODO: Hibernate 5 - configuration.getClassMappings() removed. Need to use Metadata.
-    log.warn("JbpmSessionFactory.initHibernatableClasses() is disabled for Hibernate 5 migration.");
     hibernatableLongIdClasses = new HashSet();
     hibernatableStringIdClasses = new HashSet();
-    // Iterator iter = configuration.getClassMappings();
-    // while (iter.hasNext()) {
-    //   PersistentClass persistentClass = (PersistentClass) iter.next();
-    //   if (LongType.class==persistentClass.getIdentifier().getType().getClass()) {
-    //     hibernatableLongIdClasses.add( persistentClass.getMappedClass() );
-    //   } else if (StringType.class==persistentClass.getIdentifier().getType().getClass()) {
-    //     hibernatableStringIdClasses.add( persistentClass.getMappedClass() );
-    //   }
-    // }
+    for (PersistentClass persistentClass : new org.hibernate.boot.MetadataSources(configuration.getStandardServiceRegistryBuilder().build()).buildMetadata().getEntityBindings()) {
+      if (StandardBasicTypes.LONG.equals(persistentClass.getIdentifier().getType())) {
+        hibernatableLongIdClasses.add(persistentClass.getMappedClass());
+      } else if (StandardBasicTypes.STRING.equals(persistentClass.getIdentifier().getType())) {
+        hibernatableStringIdClasses.add(persistentClass.getMappedClass());
+      }
+    }
   }
 
   private static final Log log = LogFactory.getLog(JbpmSessionFactory.class);

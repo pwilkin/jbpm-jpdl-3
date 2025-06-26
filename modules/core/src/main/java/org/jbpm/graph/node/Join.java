@@ -90,7 +90,7 @@ public class Join extends Node implements Parsable {
       if (lockMode != null)
         parentLockMode = lockMode.toString();
       else if ("pessimistic".equals(lock))
-        parentLockMode = LockMode.UPGRADE.toString();
+        parentLockMode = LockMode.PESSIMISTIC_WRITE.toString();
       else
         jpdlReader.addError("invalid parent lock mode '" + lock + "'");
     }
@@ -121,7 +121,7 @@ public class Join extends Node implements Parsable {
         Session session = (jbpmContext!=null ? jbpmContext.getSession() : null);
         if (session!=null) {
           // force version increment by default (LockMode.FORCE)
-          LockMode lockMode = parentLockMode != null ? LockMode.valueOf(parentLockMode.toUpperCase()) : LockMode.FORCE;
+          LockMode lockMode = parentLockMode != null ? LockMode.valueOf(parentLockMode.toUpperCase()) : LockMode.PESSIMISTIC_FORCE_INCREMENT;
           log.debug("acquiring " + lockMode + " lock on " + parentToken);
           // lock updates as appropriate, no need to flush here
           session.lock(parentToken, lockMode);

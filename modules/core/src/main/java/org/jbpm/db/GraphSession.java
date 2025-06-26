@@ -31,9 +31,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.HibernateException;
 import org.hibernate.LockMode;
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.hibernate.Session;
-import org.hibernate.criterion.Restrictions;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 import org.jbpm.JbpmException;
 import org.jbpm.graph.def.ProcessDefinition;
 import org.jbpm.graph.exe.ProcessInstance;
@@ -158,8 +160,8 @@ public class GraphSession
     try
     {
       Query query = session.getNamedQuery("GraphSession.findProcessDefinitionByNameAndVersion");
-      query.setString("name", name);
-      query.setInteger("version", version);
+      query.setParameter("name", name);
+      query.setParameter("version", version);
       processDefinition = (ProcessDefinition)query.uniqueResult();
     }
     catch (Exception e)
@@ -180,7 +182,7 @@ public class GraphSession
     try
     {
       Query query = session.getNamedQuery("GraphSession.findLatestProcessDefinitionQuery");
-      query.setString("name", name);
+      query.setParameter("name", name);
       query.setMaxResults(1);
       processDefinition = (ProcessDefinition)query.uniqueResult();
     }
@@ -251,7 +253,7 @@ public class GraphSession
     try
     {
       Query query = session.getNamedQuery("GraphSession.findAllProcessDefinitionVersions");
-      query.setString("name", name);
+      query.setParameter("name", name);
       return query.list();
     }
     catch (HibernateException e)
@@ -301,14 +303,17 @@ public class GraphSession
 
   protected ProcessInstance findNextProcessInstance(ProcessDefinition processDefinition)
   {
-    return (ProcessInstance)session.createCriteria(ProcessInstance.class).add(Restrictions.eq("processDefinition", processDefinition)).setMaxResults(1)
-        .uniqueResult();
+    CriteriaBuilder cb = session.getCriteriaBuilder();
+    CriteriaQuery<ProcessInstance> cq = cb.createQuery(ProcessInstance.class);
+    Root<ProcessInstance> root = cq.from(ProcessInstance.class);
+    cq.select(root).where(cb.equal(root.get("processDefinition"), processDefinition));
+    return session.createQuery(cq).setMaxResults(1).uniqueResult();
   }
 
   protected List findReferencingProcessStates(ProcessDefinition subProcessDefinition)
   {
     Query query = session.getNamedQuery("GraphSession.findReferencingProcessStates");
-    query.setEntity("subProcessDefinition", subProcessDefinition);
+    query.setParameter("subProcessDefinition", subProcessDefinition);
     return query.list();
   }
 
@@ -420,7 +425,7 @@ public class GraphSession
   {
     try
     {
-      session.lock(processInstance, LockMode.UPGRADE);
+      session.lock(processInstance, LockMode.PESSIMISTIC_WRITE);
     }
     catch (Exception e)
     {
@@ -440,7 +445,7 @@ public class GraphSession
     try
     {
       Query query = session.getNamedQuery("GraphSession.findAllProcessInstancesForADefinition");
-      query.setLong("processDefinitionId", processDefinitionId);
+      query.setParameter("processDefinitionId", processDefinitionId);
       processInstances = query.list();
 
     }
@@ -476,7 +481,7 @@ public class GraphSession
       {
         log.debug("deleting jobs for process instance " + processInstance.getId());
         Query query = session.getNamedQuery("GraphSession.deleteJobsForProcessInstance");
-        query.setEntity("processInstance", processInstance);
+        query.setParameter("processInstance", processInstance);
         query.executeUpdate();
       }
 
@@ -484,7 +489,7 @@ public class GraphSession
       if (includeTasks)
       {
         Query query = session.getNamedQuery("GraphSession.findTaskInstanceIdsForProcessInstance");
-        query.setEntity("processInstance", processInstance);
+        query.setParameter("processInstance", processInstance);
         List taskInstanceIds = query.list();
 
         if ((taskInstanceIds != null) && (!taskInstanceIds.isEmpty()))
@@ -527,7 +532,7 @@ public class GraphSession
   void deleteLogs(ProcessInstance processInstance)
   {
     Query query = session.getNamedQuery("GraphSession.findLogsForProcessInstance");
-    query.setEntity("processInstance", processInstance);
+    query.setParameter("processInstance", processInstance);
     List logs = query.list();
     Iterator iter = logs.iterator();
     while (iter.hasNext())
@@ -542,7 +547,7 @@ public class GraphSession
     if (token != null)
     {
       Query query = session.getNamedQuery("GraphSession.findSubProcessInstances");
-      query.setEntity("processInstance", token.getProcessInstance());
+      query.setParameter("processInstance", token.getProcessInstance());
       List processInstances = query.list();
 
       if (processInstances == null || processInstances.isEmpty())
@@ -639,8 +644,8 @@ public class GraphSession
     try
     {
       Query query = session.getNamedQuery("GraphSession.calculateAverageTimeByNode");
-      query.setLong("processDefinitionId", processDefinitionId);
-      query.setDouble("minimumDuration", minumumDurationMillis);
+      query.setParameter("processDefinitionId", processDefinitionId);
+      query.setParameter("minimumDuration", minumumDurationMillis);
       List listResults = query.list();
 
       if (listResults != null)
@@ -678,7 +683,7 @@ public class GraphSession
     try
     {
       Query query = session.getNamedQuery("GraphSession.findActiveNodesByProcessInstance");
-      query.setEntity("processInstance", processInstance);
+      query.setParameter("processInstance", processInstance);
       results = query.list();
 
     }
@@ -697,8 +702,8 @@ public class GraphSession
     try
     {
       Query query = session.getNamedQuery("GraphSession.findProcessInstanceByKey");
-      query.setEntity("processDefinition", processDefinition);
-      query.setString("key", key);
+      query.setParameter("processDefinition", processDefinition);
+      query.setParameter("key", key);
       processInstance = (ProcessInstance)query.uniqueResult();
 
     }
@@ -717,8 +722,8 @@ public class GraphSession
     try
     {
       Query query = session.getNamedQuery("GraphSession.findProcessInstanceByKey");
-      query.setEntity("processDefinition", processDefinition);
-      query.setString("key", key);
+      query.setParameter("processDefinition", processDefinition);
+      query.setParameter("key", key);
       processInstance = (ProcessInstance)query.uniqueResult();
       if (processInstance == null)
       {

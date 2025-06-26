@@ -30,6 +30,7 @@
   <!-- Properties -->
   <properties>
     <surefire.jvm.args>-Xmx512m</surefire.jvm.args>
+    <hibernate.version>6.4.4.Final</hibernate.version>
   </properties>
 
   <!-- Dependencies -->
@@ -43,17 +44,17 @@
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
     </dependency>
-    <!-- dom4j will be provided transitively by Hibernate 5 with a compatible version (2.1.3) -->
-    <!-- <dependency>
-      <groupId>dom4j</groupId>
+    <dependency>
+      <groupId>org.dom4j</groupId>
       <artifactId>dom4j</artifactId>
+      <version>2.1.4</version>
       <exclusions>
-      	<exclusion>
-      	  <artifactId>xml-apis</artifactId>
-      	  <groupId>xml-apis</groupId>
-      	</exclusion>
+        <exclusion>
+          <artifactId>xml-apis</artifactId>
+          <groupId>xml-apis</groupId>
+        </exclusion>
       </exclusions>
-    </dependency> -->
+    </dependency>
     <dependency>
       <groupId>javax.jcr</groupId>
       <artifactId>jcr</artifactId>
@@ -92,6 +93,11 @@
       <artifactId>hibernate-core</artifactId>
       <version>${hibernate.version}</version> <!-- Explicit version -->
     </dependency>
+    <dependency>
+      <groupId>org.hibernate.tool</groupId>
+      <artifactId>hibernate-tools-orm</artifactId>
+      <version>${hibernate.version}</version>
+    </dependency>
     <!-- cglib is no longer needed as a direct dependency with Hibernate 5+ -->
     <!-- <dependency>
 		<groupId>cglib</groupId>
@@ -111,6 +117,17 @@
       <groupId>org.glassfish.corba</groupId>
       <artifactId>glassfish-corba-omgapi</artifactId>
       <version>4.1.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>jakarta.transaction</groupId>
+      <artifactId>jakarta.transaction-api</artifactId>
+      <version>2.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.persistence</groupId>
+      <artifactId>jakarta.persistence-api</artifactId>
+      <version>3.1.0</version>
     </dependency>
 
     <!-- Test Dependencies -->

@@ -37,6 +37,24 @@ import org.jbpm.configuration.ObjectFactoryParser;
 import org.jbpm.configuration.ObjectInfo;
 import org.jbpm.configuration.ValueInfo;
 import org.jbpm.graph.def.ProcessDefinition;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Configuration;
+import org.jbpm.db.JbpmSessionFactory;
 import org.jbpm.instantiation.DefaultProcessClassLoaderFactory;
 import org.jbpm.instantiation.ProcessClassLoaderFactory;
 import org.jbpm.job.executor.JobExecutor;
@@ -633,6 +651,10 @@ public class JbpmConfiguration implements Serializable
     {
       jbpmContext.close();
     }
+  }
+
+  public static Configuration getHibernateConfiguration() {
+    return JbpmSessionFactory.createConfiguration();
   }
 
   static JbpmConfiguration getCurrentJbpmConfiguration()

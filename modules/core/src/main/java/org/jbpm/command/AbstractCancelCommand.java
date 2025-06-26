@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.jbpm.JbpmContext;
 import org.jbpm.graph.exe.Token;
 import org.jbpm.taskmgmt.exe.TaskInstance;
@@ -60,7 +60,7 @@ public abstract class AbstractCancelCommand extends AbstractBaseCommand
   protected List getTasksForToken(Token token)
   {
     Query hqlQuery = jbpmContext.getSession().getNamedQuery("TaskMgmtSession.findTaskInstancesByTokenId");
-    hqlQuery.setLong("tokenId", token.getId());
+    hqlQuery.setParameter("tokenId", token.getId());
     return hqlQuery.list();
   }
 

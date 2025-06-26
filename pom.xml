@@ -55,7 +55,7 @@
     <dom4j.version>1.6.1</dom4j.version> <!-- Hibernate 5 still uses dom4j but consider if this specific version is optimal -->
     <drools.version>4.0.7</drools.version>
     <dumbster.version>1.6</dumbster.version>
-    <hibernate.version>5.4.33.Final</hibernate.version>
+    <hibernate.version>6.4.4.Final</hibernate.version>
     <!--hibernate.commons.annotations.version>3.2.0.Final</hibernate.commons.annotations.version--> <!-- Not needed for H4+ -->
     <hibernate.validator.version>6.0.23.Final</hibernate.validator.version> <!-- Validator 6.x for Hibernate 5.x -->
     <izpack.version>4.1.0</izpack.version>
@@ -323,7 +323,7 @@
         <version>${drools.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.hibernate</groupId>
+        <groupId>org.hibernate.orm</groupId>
         <artifactId>hibernate-core</artifactId>
         <version>${hibernate.version}</version>
       </dependency>
@@ -464,6 +464,21 @@
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.2.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.3.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>3.3.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
           <version>3.3.1</version>
         </plugin>
@@ -498,13 +513,44 @@
   <!-- Repositories -->
   <repositories>
     <repository>
-      <id>repository.jboss.org</id>
-      <url>https://repository.jboss.org/maven2</url>
+      <id>central</id>
+      <name>Maven Repository Switchboard</name>
+      <layout>default</layout>
+      <url>https://repo1.maven.org/maven2</url>
       <snapshots>
         <enabled>false</enabled>
       </snapshots>
     </repository>
+    <repository>
+      <id>jboss-public-repository-group</id>
+      <name>JBoss Public Repository Group</name>
+      <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+      <layout>default</layout>
+      <releases>
+        <enabled>true</enabled>
+        <updatePolicy>never</updatePolicy>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+        <updatePolicy>never</updatePolicy>
+      </snapshots>
+    </repository>
   </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>central</id>
+      <name>Maven Plugin Repository</name>
+      <url>https://repo1.maven.org/maven2</url>
+      <layout>default</layout>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <updatePolicy>never</updatePolicy>
+      </releases>
+    </pluginRepository>
+  </pluginRepositories>
 
   <!-- Profiles -->
   <profiles>

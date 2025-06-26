@@ -21,10 +21,9 @@
  */
 package org.jbpm.persistence.jta;
 
-import javax.transaction.SystemException;
-import javax.transaction.UserTransaction;
-
-import javax.transaction.Status;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.UserTransaction;
+import jakarta.transaction.Status;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 // import org.hibernate.engine.spi.SessionFactoryImplementor; // No longer directly used it seems
@@ -94,8 +93,7 @@ public class JtaDbPersistenceService extends DbPersistenceService {
   void beginUserTransaction() {
     try {
       log.debug("begin user transaction");
-      userTransaction = ((JtaDbPersistenceServiceFactory) persistenceServiceFactory)
-          .getUserTransaction();
+      userTransaction = persistenceServiceFactory.getUserTransaction();
       userTransaction.begin();
     } catch (Exception e) {
       throw new JbpmException("couldn't begin user transaction", e);

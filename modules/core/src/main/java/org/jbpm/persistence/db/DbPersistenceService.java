@@ -88,7 +88,6 @@ public class DbPersistenceService implements Service, PersistenceService {
 
   DbPersistenceService(DbPersistenceServiceFactory persistenceServiceFactory, Services services) {
     this.persistenceServiceFactory = persistenceServiceFactory;
-    this.isTransactionEnabled = persistenceServiceFactory.isTransactionEnabled();
     this.isCurrentSessionEnabled = persistenceServiceFactory.isCurrentSessionEnabled();
     this.services = services;
   }
@@ -176,10 +175,10 @@ public class DbPersistenceService implements Service, PersistenceService {
 
   public Connection getConnection(boolean resolveSession) {
     if (connection==null) {
-      if (persistenceServiceFactory.getDataSource()!=null) { 
+      if (persistenceServiceFactory.getJbpmConfiguration().hasDataSource()) { 
         try {
           log.debug("fetching jdbc connection from datasource");
-          connection = persistenceServiceFactory.getDataSource().getConnection();
+          connection = persistenceServiceFactory.getJbpmConfiguration().getDataSource().getConnection();
           mustConnectionBeClosed = true;
         } catch (Exception e) {
           // NOTE that Error's are not caught because that might halt the JVM and mask the original Error.
@@ -403,9 +402,7 @@ public class DbPersistenceService implements Service, PersistenceService {
     return taskMgmtSession;
   }
 
-  public DataSource getDataSource() {
-    return persistenceServiceFactory.dataSource;
-  }
+  
 
   /**
    * @deprecated use {@link org.jbpm.tx.TxService} instead.
@@ -451,7 +448,7 @@ public class DbPersistenceService implements Service, PersistenceService {
     this.contextSession = contextSession;
   }
   public void setDataSource(DataSource dataSource) {
-    this.persistenceServiceFactory.dataSource = dataSource;
+    this.persistenceServiceFactory.setDataSource(dataSource);
   }
   public void setGraphSession(GraphSession graphSession) {
     this.graphSession = graphSession;

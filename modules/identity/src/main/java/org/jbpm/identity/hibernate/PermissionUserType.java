@@ -96,9 +96,9 @@ public class PermissionUserType implements CompositeUserType {
 
   public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index, SessionImplementor session) throws HibernateException, SQLException {
     Permission permission = (Permission) value;
-    preparedStatement.setString(index, permission.getClass().getName());
-    preparedStatement.setString(index+1, permission.getName());
-    preparedStatement.setString(index+2, permission.getActions());
+    preparedStatement.setParameter(index, permission.getClass().getName());
+    preparedStatement.setParameter(index+1, permission.getName());
+    preparedStatement.setParameter(index+2, permission.getActions());
   }
 
   public Object deepCopy(Object permission) throws HibernateException {

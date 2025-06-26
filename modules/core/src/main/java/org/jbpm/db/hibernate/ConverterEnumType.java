@@ -44,11 +44,13 @@ public class ConverterEnumType implements UserType {
   public Serializable disassemble(Object o) throws HibernateException { return (Serializable) o; }
   public Object assemble(Serializable s, Object o) throws HibernateException { return s; }
   public Object replace(Object original, Object target, Object owner) { return target; }
-  public int[] sqlTypes() { return SQLTYPES; }
+  public int getSqlType() {
+    return Types.CHAR;
+  }
   public Class returnedClass() { return Converter.class; }
 
-  public Object nullSafeGet(ResultSet resultSet, String[] names, SharedSessionContractImplementor session, Object owner) throws HibernateException, SQLException {
-    String converterDatabaseId = resultSet.getString(names[0]);
+  public Object nullSafeGet(ResultSet resultSet, int position, SharedSessionContractImplementor session, Object owner) throws HibernateException, SQLException {
+    String converterDatabaseId = resultSet.getString(position);
     if (resultSet.wasNull()) { // Good practice to check for null
         return null;
     }

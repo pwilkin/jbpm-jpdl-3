@@ -7,8 +7,8 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.Query;
-import org.hibernate.transform.DistinctResultTransformer;
+import org.hibernate.query.Query;
+
 import org.jbpm.JbpmException;
 import org.jbpm.graph.def.GraphElement;
 import org.jbpm.graph.def.Node;
@@ -217,9 +217,9 @@ public class ChangeProcessInstanceVersionCommand extends AbstractProcessInstance
     Node newTaskNode = findReplacementNode(newDef, oldNode);
     
     Query q = getJbpmContext().getSession().getNamedQuery("TaskMgmtSession.findTaskForNode");
-    q.setResultTransformer(DistinctResultTransformer.INSTANCE);
-    q.setString("taskName", replacementTaskName);
-    q.setLong("taskNodeId", newTaskNode.getId());
+    
+    q.setParameter("taskName", replacementTaskName);
+    q.setParameter("taskNodeId", newTaskNode.getId());
 
     Object[] distinctResult = (Object[]) q.uniqueResult();
     Task newTask = null;
@@ -267,7 +267,7 @@ public class ChangeProcessInstanceVersionCommand extends AbstractProcessInstance
   private List getTasksForToken(Token token)
   {
     Query query = getJbpmContext().getSession().getNamedQuery("TaskMgmtSession.findTaskInstancesByTokenId");
-    query.setLong("tokenId", token.getId());
+    query.setParameter("tokenId", token.getId());
     return query.list();
 
   }

@@ -23,73 +23,71 @@ package org.jbpm.persistence.jta;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import javax.transaction.UserTransaction;
+import jakarta.transaction.UserTransaction;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.hibernate.SessionFactory;
+import org.jbpm.JbpmConfiguration;
 import org.jbpm.JbpmException;
-import org.jbpm.persistence.db.DbPersistenceServiceFactory;
+import org.jbpm.persistence.PersistenceService;
+
 import org.jbpm.svc.Service;
 
-/**
- * The JTA persistence service enables jBPM to participate in JTA transactions.
- * If an existing transaction is underway, {@link JtaDbPersistenceService} 
- * clings to it; otherwise it starts a new transaction.
- * 
- * <h3>Configuration</h3>
- * 
- * The JTA persistence service factory has the configurable fields described
- * below.
- * 
- * <ul>
- * <li><code>isCurrentSessionEnabled</code></li>
- * <li><code>isTransactionEnabled</code></li>
- * </ul>
- * 
- * Refer to the jBPM manual for details.
- * 
- * @author Tom Baeyens
- */
-public class JtaDbPersistenceServiceFactory extends DbPersistenceServiceFactory
-{
+public class JtaDbPersistenceServiceFactory extends org.jbpm.persistence.db.DbPersistenceServiceFactory {
 
   private static final long serialVersionUID = 1L;
 
-  private UserTransaction userTransaction;
+  protected JbpmConfiguration jbpmConfiguration = null;
+  protected SessionFactory sessionFactory = null;
+  protected boolean isCurrentSessionEnabled = true;
+  protected String userTransactionName = "java:comp/UserTransaction";
 
-  public JtaDbPersistenceServiceFactory()
-  {
-    setCurrentSessionEnabled(true);
-    setTransactionEnabled(false);
+  public JtaDbPersistenceServiceFactory(JbpmConfiguration jbpmConfiguration) {
+    super(jbpmConfiguration);
   }
 
-  public Service openService()
-  {
+  public PersistenceService openService() {
     return new JtaDbPersistenceService(this);
   }
 
-  public UserTransaction getUserTransaction()
-  {
-    if (userTransaction == null)
-    {
-      String jndiName = getConfiguration().getProperty("jta.UserTransaction");
-      if (jndiName == null)
-      {
-        /*
-         * EJB 2.1 section 20.9 The container must make the UserTransaction interface available to the enterprise beans that are allowed to use this interface (only
-         * session and message- driven beans with bean-managed transaction demarcation are allowed to use this interface) in JNDI under the name
-         * java:comp/UserTransaction. J2EE 1.4 section 4.2.1.1 The J2EE platform must provide an object implementing the UserTransaction interface to all web
-         * components. The platform must publish the UserTransaction object in JNDI under the name java:comp/UserTransaction.
-         */
-        jndiName = "java:comp/UserTransaction";
-      }
-      try
-      {
-        userTransaction = (UserTransaction)new InitialContext().lookup(jndiName);
-      }
-      catch (NamingException e)
-      {
-        throw new JbpmException("could not retrieve user transaction with name " + jndiName, e);
-      }
+  public SessionFactory getSessionFactory() {
+    if (sessionFactory == null) {
+      sessionFactory = JbpmConfiguration.getHibernateConfiguration().buildSessionFactory();
     }
-    return userTransaction;
+    return sessionFactory;
   }
+
+  public void close() {
+    if (sessionFactory != null) {
+      sessionFactory.close();
+      sessionFactory = null;
+    }
+  }
+
+  public UserTransaction getUserTransaction() {
+    try {
+      return (UserTransaction) new InitialContext().lookup(userTransactionName);
+    } catch (NamingException e) {
+      throw new JbpmException("couldn't find user transaction in jndi at '" + userTransactionName + "'", e);
+    }
+  }
+
+  public boolean isCurrentSessionEnabled() {
+    return isCurrentSessionEnabled;
+  }
+
+  public void setCurrentSessionEnabled(boolean isCurrentSessionEnabled) {
+    this.isCurrentSessionEnabled = isCurrentSessionEnabled;
+  }
+
+  public String getUserTransactionName() {
+    return userTransactionName;
+  }
+
+  public void setUserTransactionName(String userTransactionName) {
+    this.userTransactionName = userTransactionName;
+  }
+
+  private static final Log log = LogFactory.getLog(JtaDbPersistenceServiceFactory.class);
 }
