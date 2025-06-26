@@ -28,6 +28,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.Collections;
 import java.util.EnumSet;
+import org.hibernate.tool.schema.SourceType;
+import org.hibernate.tool.schema.spi.ExecutionOptions;
+import org.hibernate.tool.schema.spi.ExceptionHandler;
+import org.hibernate.tool.schema.spi.CommandAcceptanceException;
+import org.hibernate.tool.hbm2ddl.SchemaExport;
+import org.hibernate.tool.schema.spi.SchemaCreator;
+import org.hibernate.tool.schema.spi.SchemaDropper;
+import org.hibernate.tool.schema.spi.SchemaFilter;
+import org.hibernate.tool.schema.spi.SchemaManagementTool;
+import org.hibernate.boot.registry.StandardServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.tool.schema.internal.exec.ScriptTargetOutputToWriter;
+import org.hibernate.tool.schema.spi.ContributableMatcher;
+import org.hibernate.tool.schema.spi.SourceDescriptor;
+import org.hibernate.tool.schema.spi.TargetDescriptor;
 import org.hibernate.tool.schema.TargetType;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -35,6 +50,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
+import java.io.StringWriter;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -63,10 +79,7 @@ import org.hibernate.engine.jdbc.spi.JdbcServices;
 import org.hibernate.engine.config.spi.ConfigurationService;
 import org.hibernate.mapping.Table;
 import org.hibernate.service.ServiceRegistry;
-import org.hibernate.tool.schema.internal.SchemaCreatorImpl;
-import org.hibernate.tool.schema.internal.SchemaDropperImpl;
-import org.hibernate.tool.schema.spi.SchemaFilter;
-import org.hibernate.tool.schema.spi.SchemaManagementTool;
+
 import org.jbpm.JbpmException;
 
 /**
@@ -98,32 +111,104 @@ public class JbpmSchema implements Serializable {
 
   public String[] getCreateSql() {
     if (createSql == null) {
-      final List<String> script = new ArrayList<>();
-                  serviceRegistry.getService(SchemaManagementTool.class).getSchemaCreator(java.util.Collections.emptyMap()).doCreation(
-          metadata,
-          org.hibernate.tool.schema.spi.ExecutionOptions.DEFAULT,
-          org.hibernate.tool.schema.spi.ContributableMatcher.ALL,
-          org.hibernate.tool.schema.spi.SourceDescriptor.METADATA_SOURCE,
-          org.hibernate.tool.schema.spi.TargetDescriptor.forTargets(java.util.EnumSet.of(org.hibernate.tool.schema.TargetType.SCRIPT)),
-          (String sql) -> script.add(sql)
-      );
-      createSql = script.toArray(new String[0]);
+      final StringWriterScriptTargetOutput createScriptTarget = new StringWriterScriptTargetOutput();
+      final TargetDescriptor createTargetDescriptor = new ScriptTargetDescriptor(createScriptTarget);
+      Map<String, Object> configurationProperties = new HashMap<>();
+      configurationProperties.put("jakarta.persistence.schema-generation.scripts.action", "create");
+      configurationProperties.put("jakarta.persistence.schema-generation.scripts.create-target", createScriptTarget.getWriter());
+
+      StandardServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
+          .applySettings(configurationProperties)
+          .build();
+
+      try {
+          SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
+          SchemaCreator schemaCreator = schemaManagementTool.getSchemaCreator(configurationProperties);
+          ExecutionOptions executionOptions = new ExecutionOptions() {
+              @Override
+              public boolean shouldManageNamespaces() {
+                  return false;
+              }
+
+              @Override
+              public Map<String, Object> getConfigurationValues() {
+                  return serviceRegistry.getService(ConfigurationService.class).getSettings();
+              }
+
+              @Override
+              public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
+                  return new org.hibernate.tool.schema.spi.ExceptionHandler() {
+                      @Override
+                      public void handleException(Exception exception) {
+                          // no-op
+                      }
+                  };
+              }
+
+              @Override
+              public org.hibernate.tool.schema.spi.SchemaFilter getSchemaFilter() {
+                  return org.hibernate.tool.schema.spi.SchemaFilter.ALL;
+              }
+          };
+          schemaCreator.doCreation(metadata, executionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), createTargetDescriptor);
+      } catch (Exception e) {
+          throw new JbpmException("couldn't create schema", e);
+      } finally {
+          StandardServiceRegistryBuilder.destroy(serviceRegistry);
+      }
+      createSql = new String[]{createScriptTarget.getWriter().toString()};
     }
     return createSql;
   }
 
   public String[] getDropSql() {
     if (dropSql == null) {
-      final List<String> script = new ArrayList<>();
-      serviceRegistry.getService(SchemaManagementTool.class).getSchemaDropper(java.util.Collections.emptyMap()).doDrop(
-          metadata,
-          org.hibernate.tool.schema.spi.ExecutionOptions.DEFAULT,
-          org.hibernate.tool.schema.spi.ContributableMatcher.ALL,
-          org.hibernate.tool.schema.spi.SourceDescriptor.METADATA_SOURCE,
-          org.hibernate.tool.schema.spi.TargetDescriptor.forTargets(java.util.EnumSet.of(org.hibernate.tool.schema.TargetType.SCRIPT)),
-          (String sql) -> script.add(sql)
-      );
-      dropSql = script.toArray(new String[0]);
+      final StringWriterScriptTargetOutput dropScriptTarget = new StringWriterScriptTargetOutput();
+      final TargetDescriptor dropTargetDescriptor = new ScriptTargetDescriptor(dropScriptTarget);
+      Map<String, Object> configurationProperties = new HashMap<>();
+      configurationProperties.put("jakarta.persistence.schema-generation.scripts.action", "drop");
+      configurationProperties.put("jakarta.persistence.schema-generation.scripts.drop-target", dropScriptTarget.getWriter());
+
+      StandardServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
+          .applySettings(configurationProperties)
+          .build();
+
+      try {
+          SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
+          SchemaDropper schemaDropper = schemaManagementTool.getSchemaDropper(configurationProperties);
+          ExecutionOptions executionOptions = new ExecutionOptions() {
+              @Override
+              public boolean shouldManageNamespaces() {
+                  return false;
+              }
+
+              @Override
+              public Map<String, Object> getConfigurationValues() {
+                  return serviceRegistry.getService(ConfigurationService.class).getSettings();
+              }
+
+              @Override
+              public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
+                  return new org.hibernate.tool.schema.spi.ExceptionHandler() {
+                      @Override
+                      public void handleException(Exception exception) {
+                          // no-op
+                      }
+                  };
+              }
+
+              @Override
+              public org.hibernate.tool.schema.spi.SchemaFilter getSchemaFilter() {
+                  return org.hibernate.tool.schema.spi.SchemaFilter.ALL;
+              }
+          };
+          schemaDropper.doDrop(metadata, executionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), dropTargetDescriptor);
+      } catch (Exception e) {
+          throw new JbpmException("couldn't drop schema", e);
+      } finally {
+          StandardServiceRegistryBuilder.destroy(serviceRegistry);
+      }
+      dropSql = new String[]{dropScriptTarget.getWriter().toString()};
     }
     return dropSql;
   }
@@ -133,33 +218,97 @@ public class JbpmSchema implements Serializable {
       String catalog = (String) serviceRegistry.getService(ConfigurationService.class).getSettings().get("hibernate.default_catalog");
       String schema = (String) serviceRegistry.getService(ConfigurationService.class).getSettings().get("hibernate.default_schema");
 
-      final List<String> dropForeignKeysSql = new ArrayList<>();
-                  serviceRegistry.getService(SchemaManagementTool.class).getSchemaDropper(java.util.Collections.emptyMap()).doDrop(
-          metadata,
-          org.hibernate.tool.schema.spi.ExecutionOptions.DEFAULT,
-          org.hibernate.tool.schema.spi.ContributableMatcher.ALL,
-          org.hibernate.tool.schema.spi.SourceDescriptor.METADATA_SOURCE,
-          org.hibernate.tool.schema.spi.TargetDescriptor.forTargets(java.util.EnumSet.of(org.hibernate.tool.schema.TargetType.SCRIPT)),
-          (String sql) -> {
-            if (sql.toLowerCase().contains("foreign key")) {
-              dropForeignKeysSql.add(sql);
-            }
-          }
-      );
+      final StringWriterScriptTargetOutput dropScriptTarget = new StringWriterScriptTargetOutput();
+      final TargetDescriptor dropTargetDescriptor = new ScriptTargetDescriptor(dropScriptTarget);
+      Map<String, Object> dropConfigurationProperties = new HashMap<>();
+      dropConfigurationProperties.put("jakarta.persistence.schema-generation.scripts.action", "drop");
+      dropConfigurationProperties.put("jakarta.persistence.schema-generation.scripts.drop-target", dropScriptTarget.getWriter());
 
-      final List<String> createForeignKeysSql = new ArrayList<>();
-                  serviceRegistry.getService(SchemaManagementTool.class).getSchemaCreator(java.util.Collections.emptyMap()).doCreation(
-          metadata,
-          org.hibernate.tool.schema.spi.ExecutionOptions.DEFAULT,
-          org.hibernate.tool.schema.spi.ContributableMatcher.ALL,
-          org.hibernate.tool.schema.spi.SourceDescriptor.METADATA_SOURCE,
-          org.hibernate.tool.schema.spi.TargetDescriptor.forTargets(java.util.EnumSet.of(org.hibernate.tool.schema.TargetType.SCRIPT)),
-          (String sql) -> {
-            if (sql.toLowerCase().contains("foreign key")) {
-              createForeignKeysSql.add(sql);
-            }
-          }
-      );
+      StandardServiceRegistry dropServiceRegistry = new StandardServiceRegistryBuilder()
+          .applySettings(dropConfigurationProperties)
+          .build();
+
+      try {
+          SchemaManagementTool dropSchemaManagementTool = dropServiceRegistry.getService(SchemaManagementTool.class);
+          SchemaDropper schemaDropper = dropSchemaManagementTool.getSchemaDropper(dropConfigurationProperties);
+          ExecutionOptions dropExecutionOptions = new ExecutionOptions() {
+              @Override
+              public boolean shouldManageNamespaces() {
+                  return false;
+              }
+
+              @Override
+              public Map<String, Object> getConfigurationValues() {
+                  return dropServiceRegistry.getService(ConfigurationService.class).getSettings();
+              }
+
+              @Override
+              public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
+                  return new org.hibernate.tool.schema.spi.ExceptionHandler() {
+                      @Override
+                      public void handleException(Exception exception) {
+                          // no-op
+                      }
+                  };
+              }
+
+              @Override
+              public org.hibernate.tool.schema.spi.SchemaFilter getSchemaFilter() {
+                  return org.hibernate.tool.schema.spi.SchemaFilter.ALL;
+              }
+          };
+          schemaDropper.doDrop(metadata, dropExecutionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), dropTargetDescriptor);
+      } catch (Exception e) {
+          throw new JbpmException("couldn't drop schema", e);
+      } finally {
+          StandardServiceRegistryBuilder.destroy(dropServiceRegistry);
+      }
+
+      final StringWriterScriptTargetOutput createScriptTarget = new StringWriterScriptTargetOutput();
+      final TargetDescriptor createTargetDescriptor = new ScriptTargetDescriptor(createScriptTarget);
+      Map<String, Object> createConfigurationProperties = new HashMap<>();
+      createConfigurationProperties.put("jakarta.persistence.schema-generation.scripts.action", "create");
+      createConfigurationProperties.put("jakarta.persistence.schema-generation.scripts.create-target", createScriptTarget.getWriter());
+
+      StandardServiceRegistry createServiceRegistry = new StandardServiceRegistryBuilder()
+          .applySettings(createConfigurationProperties)
+          .build();
+
+      try {
+          SchemaManagementTool createSchemaManagementTool = createServiceRegistry.getService(SchemaManagementTool.class);
+          SchemaCreator schemaCreator = createSchemaManagementTool.getSchemaCreator(createConfigurationProperties);
+          ExecutionOptions createExecutionOptions = new ExecutionOptions() {
+              @Override
+              public boolean shouldManageNamespaces() {
+                  return false;
+              }
+
+              @Override
+              public Map<String, Object> getConfigurationValues() {
+                  return createServiceRegistry.getService(ConfigurationService.class).getSettings();
+              }
+
+              @Override
+              public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
+                  return new org.hibernate.tool.schema.spi.ExceptionHandler() {
+                      @Override
+                      public void handleException(Exception exception) {
+                          // no-op
+                      }
+                  };
+              }
+
+              @Override
+              public org.hibernate.tool.schema.spi.SchemaFilter getSchemaFilter() {
+                  return org.hibernate.tool.schema.spi.SchemaFilter.ALL;
+              }
+          };
+          schemaCreator.doCreation(metadata, createExecutionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), createTargetDescriptor);
+      } catch (Exception e) {
+          throw new JbpmException("couldn't create schema", e);
+      } finally {
+          StandardServiceRegistryBuilder.destroy(createServiceRegistry);
+      }
 
       List<String> deleteSql = new ArrayList<>();
       Iterator<Table> iterDelete = metadata.collectTableMappings().iterator();
@@ -171,9 +320,9 @@ public class JbpmSchema implements Serializable {
       }
 
       List<String> cleanSqlList = new ArrayList<>();
-      cleanSqlList.addAll(dropForeignKeysSql);
+      cleanSqlList.add(dropScriptTarget.getWriter().toString());
       cleanSqlList.addAll(deleteSql);
-      cleanSqlList.addAll(createForeignKeysSql);
+      cleanSqlList.add(createScriptTarget.getWriter().toString());
 
       cleanSql = cleanSqlList.toArray(new String[cleanSqlList.size()]);
     }
@@ -363,7 +512,6 @@ public class JbpmSchema implements Serializable {
           serviceRegistry.getService(JdbcServices.class).getSqlExceptionHelper().logAndClearWarnings(connection);
         } else {
           log.warn("ServiceRegistry is null in closeConnection, cannot log SQL warnings via SqlExceptionHelper optimally.");
-          connection.clearWarnings();
         }
         connectionProvider.closeConnection(connection);
       } catch (SQLException e) {
