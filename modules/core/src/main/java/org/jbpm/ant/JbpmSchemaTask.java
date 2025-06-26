@@ -21,148 +21,104 @@
  */
 package org.jbpm.ant;
 
-import java.io.FileOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.util.List;
+import java.util.EnumSet;
 import java.util.Properties;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
+import org.hibernate.boot.Metadata;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.tool.hbm2ddl.SchemaExport;
-import org.hibernate.tool.hbm2ddl.SchemaUpdate;
-// import org.hibernate.util.ConfigHelper; // Replaced by classloader
+import org.hibernate.service.ServiceRegistry;
+import org.hibernate.tool.schema.spi.SchemaCreator;
+import org.hibernate.tool.schema.spi.SchemaDropper;
+import org.hibernate.tool.schema.spi.SchemaUpdate;
+import org.hibernate.tool.schema.spi.SchemaFilter;
+import org.hibernate.tool.schema.spi.SchemaManagementTool;
+import org.jbpm.JbpmException;
+import org.jbpm.db.ScriptTargetDescriptor;
+import org.jbpm.db.StringWriterScriptTargetOutput;
 
-public class JbpmSchemaTask extends Task
-{
-  String config;
-  String properties;
-  String action;
-  String output;
-  String delimiter;
+public class JbpmSchemaTask extends Task {
 
-  public void execute() throws BuildException
-  {
-    if (action == null)
-      action = "create";
+  String action = null;
+  File hibernateCfgXml = new File("hibernate.cfg.xml");
+  File hibernateProperties = null;
+  boolean drop = true;
+  boolean create = true;
+  boolean haltOnError = false;
+  File outputFile = null;
+  String delimiter = ";";
 
-    if (config == null)
-      config = "hibernate.cfg.xml";
+  public void execute() throws BuildException {
+    try {
+      // create the hibernate configuration
+      Configuration configuration = new Configuration();
+      if (hibernateCfgXml != null) {
+        configuration.configure(hibernateCfgXml);
+      }
 
-    List<Exception> exceptions = null;
-    try
-    {
-      Configuration configuration = getConfiguration();
-      if ("drop".equalsIgnoreCase(action))
-      {
-        SchemaExport schemaExport = getSchemaExport(configuration);
-        schemaExport.execute(false, false, true, false);
-        exceptions = schemaExport.getExceptions();
+      if (hibernateProperties != null) {
+        Properties properties = new Properties();
+        properties.load(new FileInputStream(hibernateProperties));
+        configuration.setProperties(properties);
       }
-      else if ("create".equalsIgnoreCase(action))
-      {
-        SchemaExport schemaExport = getSchemaExport(configuration);
-        schemaExport.execute(false, false, false, true);
-        exceptions = schemaExport.getExceptions();
+
+      ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
+        configuration.getProperties()).build();
+      Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
+      SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
+
+      if ("update".equalsIgnoreCase(action)) {
+        SchemaUpdate schemaUpdate = schemaManagementTool.getSchemaUpdater(configuration.getProperties());
+        schemaUpdate.execute(new ScriptTargetDescriptor(new StringWriterScriptTargetOutput()), metadata, serviceRegistry, SchemaFilter.ALL);
+
+      } else if ("export".equalsIgnoreCase(action)) {
+        SchemaCreator schemaCreator = schemaManagementTool.getSchemaCreator(configuration.getProperties());
+        schemaCreator.doCreation(metadata, false, new ScriptTargetDescriptor(new StringWriterScriptTargetOutput()));
+
+      } else if ("drop".equalsIgnoreCase(action)) {
+        SchemaDropper schemaDropper = schemaManagementTool.getSchemaDropper(configuration.getProperties());
+        schemaDropper.doDrop(metadata, false, new ScriptTargetDescriptor(new StringWriterScriptTargetOutput()));
+
+      } else if ("create".equalsIgnoreCase(action)) {
+        SchemaCreator schemaCreator = schemaManagementTool.getSchemaCreator(configuration.getProperties());
+        schemaCreator.doCreation(metadata, false, new ScriptTargetDescriptor(new StringWriterScriptTargetOutput()));
       }
-      else if ("update".equalsIgnoreCase(action))
-      {
-        PrintStream sysout = System.out;
-        try
-        {
-          if (output != null)
-          {
-            PrintStream prstr = new PrintStream(new FileOutputStream(output));
-            System.setOut(prstr);
-          }
-          SchemaUpdate schemaUpdate = getSchemaUpdate(configuration);
-          schemaUpdate.execute(true, false);
-          exceptions = schemaUpdate.getExceptions();
-        }
-        finally
-        {
-          System.setOut(sysout);
-        }
-      }
-      else
-      {
-        throw new IllegalArgumentException("Unsupported action: " + action);
-      }
+
+    } catch (IOException e) {
+      throw new BuildException(e);
+    } catch (JbpmException e) {
+      throw new BuildException(e);
     }
-    catch (IOException ex)
-    {
-      throw new BuildException(ex);
-    }
-
-    // Print the exceptions if there are any
-    for (Exception ex : exceptions)
-      log(ex.toString());
   }
 
-  private Configuration getConfiguration() throws IOException
-  {
-    log("Action '" + action + "' using " + config + "," + properties);
-    Configuration configuration = new Configuration();
-    configuration.configure(config);
-
-    if (properties != null)
-    {
-      // InputStream inStream = ConfigHelper.getResourceAsStream(properties);
-      InputStream inStream = JbpmSchemaTask.class.getClassLoader().getResourceAsStream(properties);
-      if (inStream == null)
-        throw new IllegalArgumentException("Cannot read properties: " + properties);
-
-      Properties properties = new Properties();
-      properties.load(inStream);
-      configuration.setProperties(properties);
-    }
-    return configuration;
-  }
-
-  private SchemaExport getSchemaExport(Configuration configuration)
-  {
-    SchemaExport schemaExport = new SchemaExport(configuration);
-
-    if (output != null)
-      schemaExport.setOutputFile(output);
-
-    if (delimiter != null)
-      schemaExport.setDelimiter(delimiter);
-
-    schemaExport.setFormat(false);
-    return schemaExport;
-  }
-
-  private SchemaUpdate getSchemaUpdate(Configuration configuration)
-  {
-    SchemaUpdate schemaUpdate = new SchemaUpdate(configuration);
-    return schemaUpdate;
-  }
-
-  public void setAction(String action)
-  {
+  public void setAction(String action) {
     this.action = action;
   }
-
-  public void setConfig(String config)
-  {
-    this.config = config;
+  public void setCreate(boolean create) {
+    this.create = create;
   }
-
-  public void setProperties(String properties)
-  {
-    this.properties = properties;
-  }
-
-  public void setDelimiter(String delimiter)
-  {
+  public void setDelimiter(String delimiter) {
     this.delimiter = delimiter;
   }
-
-  public void setOutput(String output)
-  {
-    this.output = output;
+  public void setDrop(boolean drop) {
+    this.drop = drop;
+  }
+  public void setHaltOnError(boolean haltOnError) {
+    this.haltOnError = haltOnError;
+  }
+  public void setHibernateCfgXml(File hibernateCfgXml) {
+    this.hibernateCfgXml = hibernateCfgXml;
+  }
+  public void setHibernateProperties(File hibernateProperties) {
+    this.hibernateProperties = hibernateProperties;
+  }
+  public void setOutputFile(File outputFile) {
+    this.outputFile = outputFile;
   }
 }
