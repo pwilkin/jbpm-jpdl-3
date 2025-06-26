@@ -21,219 +21,192 @@
  */
 package org.jbpm.db;
 
+import org.hibernate.boot.Metadata;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.engine.config.spi.ConfigurationService;
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Collections;
+import java.util.EnumSet;
+import org.hibernate.tool.schema.TargetType;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.cfg.Configuration;
-// import org.hibernate.cfg.Settings; // To be replaced by ServiceRegistry usage
-import org.hibernate.service.ServiceRegistry;
+
+
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
-// import org.hibernate.service.jdbc.connections.spi.ConnectionProviderInitiator; // Test import removed
+
 import org.hibernate.dialect.Dialect;
-import org.hibernate.engine.jdbc.dialect.spi.DialectFactory; // Added import
-// import org.hibernate.engine.Mapping; // To be replaced or accessed differently
-import org.hibernate.mapping.ForeignKey;
+import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
+import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment;
+import org.hibernate.engine.jdbc.spi.JdbcServices;
+
+import org.hibernate.engine.config.spi.ConfigurationService;
 import org.hibernate.mapping.Table;
-import org.hibernate.tool.hbm2ddl.SchemaExport;
-import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
-import org.hibernate.engine.jdbc.spi.JdbcServices; // Added for SqlExceptionHelper
-// import org.hibernate.internal.util.JDBCExceptionReporter; // Ensured removed
+import org.hibernate.service.ServiceRegistry;
+import org.hibernate.tool.schema.internal.SchemaCreatorImpl;
+import org.hibernate.tool.schema.internal.SchemaDropperImpl;
+import org.hibernate.tool.schema.spi.SchemaFilter;
+import org.hibernate.tool.schema.spi.SchemaManagementTool;
 import org.jbpm.JbpmException;
 
 /**
  * utilities for the jBPM database schema.
  */
-public class JbpmSchema implements Serializable
-{
+public class JbpmSchema implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  Configuration configuration = null;
-  // Settings settings; // Replaced by serviceRegistry
-  ServiceRegistry serviceRegistry;
-  // Mapping mapping = null; // To be handled differently
-  String[] createSql = null;
-  String[] dropSql = null;
-  String[] cleanSql = null;
+  private final ServiceRegistry serviceRegistry;
+  private final org.hibernate.boot.Metadata metadata;
+  private final Dialect dialect;
+  private final ConnectionProvider connectionProvider;
 
-  private Dialect dialect; // Added field declaration
-  ConnectionProvider connectionProvider = null; // Corrected: Use short name, relies on correct import
+  private String[] createSql = null;
+  private String[] dropSql = null;
+  private String[] cleanSql = null;
+
   Connection connection = null;
   Statement statement = null;
 
-  public JbpmSchema(Configuration configuration)
-  {
-    this.configuration = configuration;
-    StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder()
-            .applySettings(configuration.getProperties());
-    this.serviceRegistry = registryBuilder.build();
-    // Initialize dialect and connectionProvider using serviceRegistry
-    // this.dialect = serviceRegistry.getService(org.hibernate.engine.jdbc.dialect.spi.DialectFactory.class).buildDialect(configuration.getProperties(), null); // More complex initialization might be needed
-    this.dialect = serviceRegistry.getService(org.hibernate.engine.jdbc.dialect.spi.DialectFactory.class).buildDialect(configuration.getProperties(), null);
-    this.connectionProvider = serviceRegistry.getService(org.hibernate.engine.jdbc.connections.spi.ConnectionProvider.class);
-    // this.mapping = configuration.buildMapping(); // Commented out for now
+  public JbpmSchema(org.hibernate.boot.Metadata metadata, ServiceRegistry serviceRegistry) {
+    this.metadata = metadata;
+    this.serviceRegistry = serviceRegistry;
+
+    this.dialect = serviceRegistry.getService(JdbcEnvironment.class).getDialect();
+    this.connectionProvider = serviceRegistry.getService(ConnectionProvider.class);
   }
 
-  public String[] getCreateSql()
-  {
-    // TODO: Hibernate 5 - configuration.generateSchemaCreationScript is removed.
-    // Need to use MetadataSources -> Metadata -> SchemaExport
-    log.warn("JbpmSchema.getCreateSql() is disabled for Hibernate 5 migration.");
+  public String[] getCreateSql() {
     if (createSql == null) {
-        createSql = new String[0]; // Return empty script
+      final List<String> script = new ArrayList<>();
+                  serviceRegistry.getService(SchemaManagementTool.class).getSchemaCreator(java.util.Collections.emptyMap()).doCreation(
+          metadata,
+          org.hibernate.tool.schema.spi.ExecutionOptions.DEFAULT,
+          org.hibernate.tool.schema.spi.ContributableMatcher.ALL,
+          org.hibernate.tool.schema.spi.SourceDescriptor.METADATA_SOURCE,
+          org.hibernate.tool.schema.spi.TargetDescriptor.forTargets(java.util.EnumSet.of(org.hibernate.tool.schema.TargetType.SCRIPT)),
+          (String sql) -> script.add(sql)
+      );
+      createSql = script.toArray(new String[0]);
     }
-    // if (createSql == null)
-    // {
-    //   createSql = configuration.generateSchemaCreationScript(this.dialect);
-    // }
     return createSql;
   }
 
-  public String[] getDropSql()
-  {
-    // TODO: Hibernate 5 - configuration.generateDropSchemaScript is removed.
-    // Need to use MetadataSources -> Metadata -> SchemaExport
-    log.warn("JbpmSchema.getDropSql() is disabled for Hibernate 5 migration.");
+  public String[] getDropSql() {
     if (dropSql == null) {
-        dropSql = new String[0]; // Return empty script
+      final List<String> script = new ArrayList<>();
+      serviceRegistry.getService(SchemaManagementTool.class).getSchemaDropper(java.util.Collections.emptyMap()).doDrop(
+          metadata,
+          org.hibernate.tool.schema.spi.ExecutionOptions.DEFAULT,
+          org.hibernate.tool.schema.spi.ContributableMatcher.ALL,
+          org.hibernate.tool.schema.spi.SourceDescriptor.METADATA_SOURCE,
+          org.hibernate.tool.schema.spi.TargetDescriptor.forTargets(java.util.EnumSet.of(org.hibernate.tool.schema.TargetType.SCRIPT)),
+          (String sql) -> script.add(sql)
+      );
+      dropSql = script.toArray(new String[0]);
     }
-    // if (dropSql == null)
-    // {
-    //   dropSql = configuration.generateDropSchemaScript(this.dialect);
-    // }
     return dropSql;
   }
 
-  public String[] getCleanSql()
-  {
-    // TODO: Hibernate 5 - This method needs complete rewrite due to changes in Configuration API for table/foreign key iteration
-    // and schema export logic.
-    log.warn("JbpmSchema.getCleanSql() is disabled for Hibernate 5 migration and will return an empty script.");
+  public String[] getCleanSql() {
     if (cleanSql == null) {
-        cleanSql = new String[0]; // Return empty script
+      String catalog = (String) serviceRegistry.getService(ConfigurationService.class).getSettings().get("hibernate.default_catalog");
+      String schema = (String) serviceRegistry.getService(ConfigurationService.class).getSettings().get("hibernate.default_schema");
+
+      final List<String> dropForeignKeysSql = new ArrayList<>();
+                  serviceRegistry.getService(SchemaManagementTool.class).getSchemaDropper(java.util.Collections.emptyMap()).doDrop(
+          metadata,
+          org.hibernate.tool.schema.spi.ExecutionOptions.DEFAULT,
+          org.hibernate.tool.schema.spi.ContributableMatcher.ALL,
+          org.hibernate.tool.schema.spi.SourceDescriptor.METADATA_SOURCE,
+          org.hibernate.tool.schema.spi.TargetDescriptor.forTargets(java.util.EnumSet.of(org.hibernate.tool.schema.TargetType.SCRIPT)),
+          (String sql) -> {
+            if (sql.toLowerCase().contains("foreign key")) {
+              dropForeignKeysSql.add(sql);
+            }
+          }
+      );
+
+      final List<String> createForeignKeysSql = new ArrayList<>();
+                  serviceRegistry.getService(SchemaManagementTool.class).getSchemaCreator(java.util.Collections.emptyMap()).doCreation(
+          metadata,
+          org.hibernate.tool.schema.spi.ExecutionOptions.DEFAULT,
+          org.hibernate.tool.schema.spi.ContributableMatcher.ALL,
+          org.hibernate.tool.schema.spi.SourceDescriptor.METADATA_SOURCE,
+          org.hibernate.tool.schema.spi.TargetDescriptor.forTargets(java.util.EnumSet.of(org.hibernate.tool.schema.TargetType.SCRIPT)),
+          (String sql) -> {
+            if (sql.toLowerCase().contains("foreign key")) {
+              createForeignKeysSql.add(sql);
+            }
+          }
+      );
+
+      List<String> deleteSql = new ArrayList<>();
+      Iterator<Table> iterDelete = metadata.collectTableMappings().iterator();
+      while (iterDelete.hasNext()) {
+        Table table = iterDelete.next();
+        if (table.isPhysicalTable()) {
+          deleteSql.add("delete from " + table.getQualifiedTableName());
+        }
+      }
+
+      List<String> cleanSqlList = new ArrayList<>();
+      cleanSqlList.addAll(dropForeignKeysSql);
+      cleanSqlList.addAll(deleteSql);
+      cleanSqlList.addAll(createForeignKeysSql);
+
+      cleanSql = cleanSqlList.toArray(new String[cleanSqlList.size()]);
     }
-    // if (cleanSql == null)
-    // {
-    //   // new SchemaExport(configuration); // SchemaExport might need ServiceRegistry too
-    //
-    //   Dialect currentDialect = this.dialect; // Use the initialized dialect
-    //   String catalog = configuration.getProperty("hibernate.default_catalog");
-    //   String schema = configuration.getProperty("hibernate.default_schema");
-    //
-    //   // loop over all foreign key constraints - THIS PART IS PROBLEMATIC and commented out for now
-    //   List dropForeignKeysSql = new ArrayList();
-    //   List createForeignKeysSql = new ArrayList();
-    //   /*
-    //   Iterator iter = configuration.getTableMappings();
-    //   while (iter.hasNext())
-    //   {
-    //     Table table = (Table)iter.next();
-    //     if (table.isPhysicalTable())
-    //     {
-    //       Iterator subIter = table.getForeignKeyIterator();
-    //       while (subIter.hasNext())
-    //       {
-    //         ForeignKey fk = (ForeignKey)subIter.next();
-    //
-    //         if (fk.isPhysicalConstraint())
-    //         {
-    //           // collect the drop foreign key constraint sql
-    //           String sqlDropString = fk.sqlDropString(currentDialect, catalog, schema);
-    //           dropForeignKeysSql.add(sqlDropString);
-    //
-    //           // and collect the create foreign key constraint sql
-    //           // String sqlCreateString = fk.sqlCreateString(currentDialect, mapping, catalog, schema); // this.mapping is an issue
-    //           // createForeignKeysSql.add(sqlCreateString);
-    //         }
-    //       }
-    //     }
-    //   }
-    //   */
-    //
-    //   List deleteSql = new ArrayList();
-    //   Iterator iter = configuration.getTableMappings(); // This might still be an issue if table mappings changed structure
-    //   while (iter.hasNext())
-    //   {
-    //     Table table = (Table)iter.next();
-    //     deleteSql.add("delete from " + table.getQualifiedName(currentDialect, catalog, schema) );
-    //   }
-    //
-    //   // glue
-    //   // - drop foreign key constraints (commented out)
-    //   // - delete contents of all tables
-    //   // - create foreign key constraints (commented out)
-    //   // together to form the clean script
-    //   List cleanSqlList = new ArrayList();
-    //   // cleanSqlList.addAll(dropForeignKeysSql);
-    //   cleanSqlList.addAll(deleteSql);
-    //   // cleanSqlList.addAll(createForeignKeysSql);
-    //
-    //   if (cleanSqlList.isEmpty()) {
-    //     // If only foreign key logic was present and now commented, provide a placeholder or warning
-    //     log.warn("Clean SQL script generation might be incomplete due to commented out foreign key logic.");
-    //     cleanSql = new String[0]; // Empty script
-    //   } else {
-    //     cleanSql = (String[])cleanSqlList.toArray(new String[cleanSqlList.size()]);
-    //   }
-    // }
     return cleanSql;
   }
 
-  public boolean hasJbpmTables()
-  {
+  public boolean hasJbpmTables() {
     return (getJbpmTables().size() > 0);
   }
 
-  public List getJbpmTables()
-  {
-    // TODO: Hibernate 5 - configuration.getTableMappings() removed. Need to use Metadata.
-    log.warn("JbpmSchema.getJbpmTables() is disabled for Hibernate 5 migration.");
-    List jbpmTableNames = new ArrayList();
-    // Iterator iter = configuration.getTableMappings();
-    // while (iter.hasNext())
-    // {
-    //   Table table = (Table)iter.next();
-    //   if (table.isPhysicalTable())
-    //   {
-    //     jbpmTableNames.add(table.getName());
-    //   }
-    // }
+  public List<String> getJbpmTables() {
+    List<String> jbpmTableNames = new ArrayList<>();
+    Iterator<Table> iter = metadata.collectTableMappings().iterator();
+    while (iter.hasNext()) {
+      Table table = iter.next();
+      if (table.isPhysicalTable()) {
+        jbpmTableNames.add(table.getName());
+      }
+    }
     return jbpmTableNames;
   }
-  
-  public Map getJbpmTablesRecordCount() {
-    Map recordCounts = new HashMap();
-    
-    String sql = null;
-    
-    try
-    {
-      Iterator iter = getJbpmTables().iterator();
 
+  public Map<String, Integer> getJbpmTablesRecordCount() {
+    Map<String, Integer> recordCounts = new HashMap<>();
+    String sql = null;
+    try {
       createConnection();
-      while (iter.hasNext()) {
+      String catalog = (String) serviceRegistry.getService(ConfigurationService.class).getSettings().get("hibernate.default_catalog");
+      String schema = (String) serviceRegistry.getService(ConfigurationService.class).getSettings().get("hibernate.default_schema");
+      
+      for (String tableName : getJbpmTables()) {
         statement = connection.createStatement();
-        String tableName = (String) iter.next();
-        sql = "SELECT COUNT(*) FROM "+tableName;
+        sql = "SELECT COUNT(*) FROM " + tableName;
         ResultSet resultSet = statement.executeQuery(sql);
         resultSet.next();
         int count = resultSet.getInt(1);
@@ -241,87 +214,66 @@ public class JbpmSchema implements Serializable
         statement.close();
         recordCounts.put(tableName, count);
       }
-    }
-    catch (SQLException e)
-    {
+    } catch (SQLException e) {
       throw new JbpmException("couldn't execute sql '" + sql + "'", e);
-    }
-    finally
-    {
+    } finally {
       closeConnection();
     }
-
     return recordCounts;
   }
 
-  public void dropSchema()
-  {
+  public void dropSchema() {
     execute(getDropSql());
   }
 
-  public void createSchema()
-  {
+  public void createSchema() {
     execute(getCreateSql());
   }
 
-  public void cleanSchema()
-  {
+  public void cleanSchema() {
     if (getJbpmTables().size() > 0)
       execute(getCleanSql());
   }
 
-  public void saveSqlScripts(String dir, String prefix)
-  {
-    try
-    {
+  public void saveSqlScripts(String dir, String prefix) {
+    try {
       new File(dir).mkdirs();
       saveSqlScript(dir + "/" + prefix + ".drop.sql", getDropSql());
       saveSqlScript(dir + "/" + prefix + ".create.sql", getCreateSql());
       saveSqlScript(dir + "/" + prefix + ".clean.sql", getCleanSql());
-      // TODO: Hibernate 5 - new SchemaExport(configuration) is removed. Needs rewrite using Metadata.
-      log.warn("JbpmSchema.saveSqlScripts() - SchemaExport part is disabled for Hibernate 5 migration.");
-      // new SchemaExport(configuration).setDelimiter(getSqlDelimiter()).setOutputFile(dir + "/" + prefix + ".drop.create.sql").create(true, false);
-    }
-    catch (IOException e)
-    {
+
+      String[] drop = getDropSql();
+      String[] create = getCreateSql();
+      String[] dropCreate = new String[drop.length + create.length];
+      System.arraycopy(drop, 0, dropCreate, 0, drop.length);
+      System.arraycopy(create, 0, dropCreate, drop.length, create.length);
+      saveSqlScript(dir + "/" + prefix + ".drop.create.sql", dropCreate);
+    } catch (IOException e) {
       throw new JbpmException("couldn't generate scripts", e);
     }
   }
 
-  public static void main(String[] args)
-  {
-    if ((args == null) || (args.length == 0))
-    {
+  public static void main(String[] args) {
+    if ((args == null) || (args.length == 0)) {
       syntax();
-    }
-    else if ("create".equalsIgnoreCase(args[0]) && args.length <= 3)
-    {
-      Configuration configuration = createConfiguration(args, 1);
-      new JbpmSchema(configuration).createSchema();
-    }
-    else if ("drop".equalsIgnoreCase(args[0]) && args.length <= 3)
-    {
-      Configuration configuration = createConfiguration(args, 1);
-      new JbpmSchema(configuration).dropSchema();
-    }
-    else if ("clean".equalsIgnoreCase(args[0]) && args.length <= 3)
-    {
-      Configuration configuration = createConfiguration(args, 1);
-      new JbpmSchema(configuration).cleanSchema();
-    }
-    else if ("scripts".equalsIgnoreCase(args[0]) && args.length >= 3 && args.length <= 5)
-    {
-      Configuration configuration = createConfiguration(args, 3);
-      new JbpmSchema(configuration).saveSqlScripts(args[1], args[2]);
-    }
-    else
-    {
+    } else if ("create".equalsIgnoreCase(args[0]) && args.length <= 3) {
+      Object[] config = createConfiguration(args, 1);
+      new JbpmSchema((Metadata) config[0], (ServiceRegistry) config[1]).createSchema();
+    } else if ("drop".equalsIgnoreCase(args[0]) && args.length <= 3) {
+      Object[] config = createConfiguration(args, 1);
+      new JbpmSchema((Metadata) config[0], (ServiceRegistry) config[1]).dropSchema();
+    } else if ("clean".equalsIgnoreCase(args[0]) && args.length <= 3) {
+      Object[] config = createConfiguration(args, 1);
+      new JbpmSchema((Metadata) config[0], (ServiceRegistry) config[1]).cleanSchema();
+    } else if ("scripts".equalsIgnoreCase(args[0]) && args.length >= 3 && args.length <= 5) {
+      Object[] config = createConfiguration(args, 3);
+      new JbpmSchema((Metadata) config[0], (ServiceRegistry) config[1]).saveSqlScripts(args[1], args[2]);
+    } else {
       syntax();
     }
   }
 
-  private static void syntax()
-  {
+  private static void syntax() {
     System.err.println("syntax:");
     System.err.println("JbpmSchema create [<hibernate.cfg.xml> [<hibernate.properties>]]");
     System.err.println("JbpmSchema drop [<hibernate.cfg.xml> [<hibernate.properties>]]");
@@ -329,67 +281,60 @@ public class JbpmSchema implements Serializable
     System.err.println("JbpmSchema scripts <dir> <prefix> [<hibernate.cfg.xml> [<hibernate.properties>]]");
   }
 
-  static Configuration createConfiguration(String[] args, int index)
-  {
+  static Object[] createConfiguration(String[] args, int index) {
     String hibernateCfgXml = (args.length > index ? args[index] : "hibernate.cfg.xml");
     String hibernateProperties = (args.length > (index + 1) ? args[index + 1] : null);
 
-    Configuration configuration = new Configuration();
-    configuration.configure(new File(hibernateCfgXml));
-    if (hibernateProperties != null)
-    {
-      try
-      {
-        Properties properties = new Properties();
-        InputStream inputStream = new FileInputStream(hibernateProperties);
+    Properties properties = new Properties();
+    try (InputStream inputStream = new FileInputStream(hibernateCfgXml)) {
+      properties.loadFromXML(inputStream);
+    } catch (IOException e) {
+      throw new JbpmException("couldn't load hibernate configuration", e);
+    }
+
+    if (hibernateProperties != null) {
+      try (InputStream inputStream = new FileInputStream(hibernateProperties)) {
         properties.load(inputStream);
-        configuration.setProperties(properties);
-      }
-      catch (IOException e)
-      {
-        throw new JbpmException("couldn't load hibernate configuration", e);
+      } catch (IOException e) {
+        throw new JbpmException("couldn't load hibernate properties", e);
       }
     }
 
-    return configuration;
+    ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
+      .applySettings(properties)
+      .build();
+
+    Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry)
+      .buildMetadata();
+
+    return new Object[]{metadata, serviceRegistry};
   }
 
-  void saveSqlScript(String fileName, String[] sql) throws FileNotFoundException
-  {
+  void saveSqlScript(String fileName, String[] sql) throws FileNotFoundException {
     FileOutputStream fileOutputStream = new FileOutputStream(fileName);
-    try
-    {
+    try {
       PrintStream printStream = new PrintStream(fileOutputStream);
-      for (int i = 0; i < sql.length; i++)
-      {
+      for (int i = 0; i < sql.length; i++) {
         printStream.println(sql[i] + getSqlDelimiter());
       }
-    }
-    finally
-    {
-      try
-      {
+    } finally {
+      try {
         fileOutputStream.close();
-      }
-      catch (IOException e)
-      {
+      } catch (IOException e) {
         log.debug("failed to close file", e);
       }
     }
   }
 
-  public void execute(String[] sqls)
-  {
+  public void execute(String[] sqls) {
     String sql = null;
     boolean showSql = false;
 
-    try
-    {
+    try {
       createConnection();
       statement = connection.createStatement();
 
-      for (int i = 0; i < sqls.length; i++)
-      {
+      for (int i = 0; i < sqls.length; i++) {
         sql = sqls[i];
 
         if (showSql)
@@ -397,88 +342,58 @@ public class JbpmSchema implements Serializable
         statement.executeUpdate(sql);
       }
 
-    }
-    catch (SQLException e)
-    {
+    } catch (SQLException e) {
       throw new JbpmException("couldn't execute sql '" + sql + "'", e);
-    }
-    finally
-    {
+    } finally {
       closeConnection();
     }
   }
 
-  void closeConnection()
-  {
-    if (statement != null)
-    {
-      try
-      {
+  void closeConnection() {
+    if (statement != null) {
+      try {
         statement.close();
-      }
-      catch (SQLException e)
-      {
+      } catch (SQLException e) {
         log.debug("could not close jdbc statement", e);
       }
     }
-    if (connection != null)
-    {
-      try
-      {
-        // In H5, SqlExceptionHelper is typically accessed via JdbcServices
+    if (connection != null) {
+      try {
         if (serviceRegistry != null) {
-            serviceRegistry.getService(JdbcServices.class).getSqlExceptionHelper().logAndClearWarnings(connection);
+          serviceRegistry.getService(JdbcServices.class).getSqlExceptionHelper().logAndClearWarnings(connection);
         } else {
-            // Fallback or log warning if serviceRegistry is unexpectedly null
-            log.warn("ServiceRegistry is null in closeConnection, cannot log SQL warnings via SqlExceptionHelper optimally.");
-            // As a last resort, direct clearWarnings, though not ideal.
-            connection.clearWarnings();
+          log.warn("ServiceRegistry is null in closeConnection, cannot log SQL warnings via SqlExceptionHelper optimally.");
+          connection.clearWarnings();
         }
-        // connection.clearWarnings(); // logAndClearWarnings should handle this
         connectionProvider.closeConnection(connection);
-        // connectionProvider.close(); // Closing the provider itself here might be too aggressive if it's shared or managed by ServiceRegistry lifecycle.
-        // The ServiceRegistry that created this provider should manage its lifecycle.
-        // If this JbpmSchema instance's ServiceRegistry is self-managed and being destroyed, then provider.close() might be okay.
-        // For now, let's rely on ServiceRegistry.destroy(this.serviceRegistry) to handle it.
-      }
-      catch (SQLException e)
-      {
+      } catch (SQLException e) {
         log.debug("could not close jdbc connection", e);
       }
     }
   }
 
-  void createConnection() throws SQLException
-  {
-    // connectionProvider is now initialized in the constructor via ServiceRegistry
-    // connectionProvider = settings.getConnectionProvider();
+  void createConnection() throws SQLException {
     connection = this.connectionProvider.getConnection();
-    if (!connection.getAutoCommit())
-    {
+    if (!connection.getAutoCommit()) {
       connection.commit();
       connection.setAutoCommit(true);
     }
   }
 
-  public Properties getProperties()
-  {
-    return configuration.getProperties();
+  public Properties getProperties() {
+    Properties properties = new Properties();
+    properties.putAll(serviceRegistry.getService(ConfigurationService.class).getSettings());
+    return properties;
   }
-
-  // sql delimiter ////////////////////////////////////////////////////////////
 
   static String sqlDelimiter = null;
 
-  synchronized String getSqlDelimiter()
-  {
-    if (sqlDelimiter == null)
-    {
+  synchronized String getSqlDelimiter() {
+    if (sqlDelimiter == null) {
       sqlDelimiter = getProperties().getProperty("jbpm.sql.delimiter", ";");
     }
     return sqlDelimiter;
   }
-
-  // logger ///////////////////////////////////////////////////////////////////
 
   private static final Log log = LogFactory.getLog(JbpmSchema.class);
 }
