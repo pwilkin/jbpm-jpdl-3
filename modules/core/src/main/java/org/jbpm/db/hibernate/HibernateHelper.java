@@ -21,144 +21,65 @@
  */
 package org.jbpm.db.hibernate;
 
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
+import java.nio.file.Files;
+import java.util.EnumSet;
+import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.hibernate.SessionFactory;
+import org.hibernate.boot.Metadata;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.tool.hbm2ddl.SchemaExport;
-import org.jbpm.util.ClassLoaderUtil;
+import org.hibernate.service.ServiceRegistry;
+import org.hibernate.tool.schema.spi.SchemaCreator;
+import org.hibernate.tool.schema.spi.SchemaDropper;
+import org.hibernate.tool.schema.spi.SchemaManagementTool;
+import org.hibernate.tool.schema.TargetType;
+import org.jbpm.JbpmException;
+import org.jbpm.db.ScriptTargetDescriptor;
+import org.jbpm.db.StringWriterScriptTargetOutput;
 
 public class HibernateHelper {
 
-  private HibernateHelper() {
-    // prevent instantiation
-  }
+  public static String[] getCreateSchemaSql(Configuration configuration) {
+    try {
+      File tempFile = File.createTempFile("jbpm-create-", ".sql");
+      tempFile.deleteOnExit();
 
-  /** maps SessionFactory's to Configurations.
-   * by default, configuration lookup will be enabled */
-  static Map configurations = new HashMap();
+      ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
+        configuration.getProperties()).build();
+      Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
+      SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
+      SchemaCreator schemaCreator = schemaManagementTool.getSchemaCreator(configuration.getProperties());
 
-  public static void clearConfigurationsCache() {
-    configurations.clear();
-  }
+      StringWriterScriptTargetOutput scriptTargetOutput = new StringWriterScriptTargetOutput();
+      schemaCreator.doCreation(metadata, false, new ScriptTargetDescriptor(scriptTargetOutput));
 
-  public static SessionFactory createSessionFactory() {
-    return createSessionFactory(null, null, true);
-  }
-
-  public static SessionFactory createSessionFactory(String cfgXmlResource) {
-    return createSessionFactory(cfgXmlResource, null, true);
-  }
-
-  public static SessionFactory createSessionFactory(String cfgXmlResource, String propertiesResource) {
-    return createSessionFactory(cfgXmlResource, propertiesResource, true);
-  }
-
-  public static SessionFactory createSessionFactory(String cfgXmlResource,
-      String propertiesResource, boolean isConfigLookupEnabled) {
-    Configuration configuration = createConfiguration(cfgXmlResource, propertiesResource);
-    return createSessionFactory(configuration, isConfigLookupEnabled);
-  }
-
-  public static SessionFactory createSessionFactory(Configuration configuration,
-      boolean isConfigLookupEnabled) {
-    SessionFactory sessionFactory = configuration.buildSessionFactory();
-    if (isConfigLookupEnabled) {
-      configurations.put(sessionFactory, configuration);
+      List<String> lines = Files.readAllLines(tempFile.toPath());
+      return lines.toArray(new String[0]);
+    } catch (IOException e) {
+      throw new JbpmException("couldn't generate create script", e);
     }
-    return sessionFactory;
   }
 
-  public static Configuration createConfiguration(String cfgXmlResource, String propertiesResource) {
-    Configuration configuration = new Configuration();
+  public static String[] getDropSchemaSql(Configuration configuration) {
+    try {
+      File tempFile = File.createTempFile("jbpm-drop-", ".sql");
+      tempFile.deleteOnExit();
 
-    // if a special hibernate configuration xml file is specified,
-    if (cfgXmlResource != null) {
-      // use the configured file name
-      URL cfgURL = Thread.currentThread().getContextClassLoader().getResource(cfgXmlResource);
-      log.debug("creating hibernate configuration resource '" + cfgURL + "'");
-      configuration.configure(cfgXmlResource);
-    } else {
-      log.debug("using default hibernate configuration resource (hibernate.cfg.xml)");
-      configuration.configure();
+      ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
+        configuration.getProperties()).build();
+      Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
+      SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
+      SchemaDropper schemaDropper = schemaManagementTool.getSchemaDropper(configuration.getProperties());
+
+      StringWriterScriptTargetOutput scriptTargetOutput = new StringWriterScriptTargetOutput();
+      schemaDropper.doDrop(metadata, false, new ScriptTargetDescriptor(scriptTargetOutput));
+
+      List<String> lines = Files.readAllLines(tempFile.toPath());
+      return lines.toArray(new String[0]);
+    } catch (IOException e) {
+      throw new JbpmException("couldn't generate drop script", e);
     }
-
-    // if the properties are specified in a separate file
-    if (propertiesResource != null) {
-      log.debug("using hibernate properties from resource '" + propertiesResource + "'");
-      // load the properties
-      Properties properties = loadPropertiesFromResource(propertiesResource);
-      if (!properties.isEmpty()) {
-        // and overwrite the properties with the specified properties
-        configuration.setProperties(properties);
-      }
-    }
-
-    return configuration;
   }
-
-  public static Configuration getConfiguration(SessionFactory sessionFactory) {
-    return (Configuration) configurations.get(sessionFactory);
-  }
-
-  public static SchemaExport createSchemaExport(SessionFactory sessionFactory) {
-    // TODO: Hibernate 5 - SchemaExport API changed. Needs rewrite using Metadata.
-    log.warn("HibernateHelper.createSchemaExport() is disabled for Hibernate 5 migration.");
-    // return new SchemaExport(getConfiguration(sessionFactory));
-    return new SchemaExport(); // Will likely not work as intended, but compiles
-  }
-
-  public static boolean createSchemaExportScript(SessionFactory sessionFactory) {
-    boolean script = false;
-    String showSql = getConfiguration(sessionFactory).getProperty("hibernate.show_sql");
-    if ("true".equalsIgnoreCase(showSql)) {
-      script = true;
-    }
-    return script;
-  }
-
-  public static void clearHibernateCache(SessionFactory sessionFactory) {
-    // TODO: Hibernate 5 - Cache eviction API changed. sessionFactory.getCache().evict...() should be used.
-    log.warn("HibernateHelper.clearHibernateCache() is disabled for Hibernate 5 migration. Eviction logic needs update.");
-    // sessionFactory.evictQueries();
-    //
-    // Map classMetadata = sessionFactory.getAllClassMetadata();
-    // Iterator iter = classMetadata.keySet().iterator();
-    // while (iter.hasNext()) {
-    //   String entityName = (String) iter.next();
-    //   sessionFactory.evictEntity(entityName);
-    // }
-    //
-    // Map collectionMetadata = sessionFactory.getAllCollectionMetadata();
-    // iter = collectionMetadata.keySet().iterator();
-    // while (iter.hasNext()) {
-    //   String collectionName = (String) iter.next();
-    //   sessionFactory.evictCollection(collectionName);
-    // }
-  }
-
-  static Properties loadPropertiesFromResource(String resource) {
-    Properties properties = new Properties();
-    InputStream inputStream = ClassLoaderUtil.getStream(resource);
-    if (inputStream != null) {
-      try {
-        properties.load(inputStream);
-      } catch (IOException e) {
-        log.warn("couldn't load hibernate properties from resource '" + resource + "'", e);
-      }
-    } else {
-      log.warn("hibernate properties resource '" + resource + "' not found");
-    }
-    return properties;
-  }
-
-  private static Log log = LogFactory.getLog(HibernateHelper.class);
 }
