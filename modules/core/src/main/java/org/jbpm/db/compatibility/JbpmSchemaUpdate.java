@@ -10,21 +10,22 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.HibernateException;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.cfg.NamingStrategy;
-// import org.hibernate.cfg.Settings; // To be replaced
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider; // Corrected package
-import org.hibernate.engine.jdbc.dialect.spi.DialectFactory; // Added import
-// import org.hibernate.connection.ConnectionProviderFactory; // To be replaced
+import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.dialect.Dialect;
-// import org.hibernate.tool.hbm2ddl.DatabaseMetadata; // Already removed, ensuring it stays removed.
-import org.hibernate.internal.util.ReflectHelper;
+import org.hibernate.tool.schema.spi.SchemaUpdate;
+import org.hibernate.tool.schema.spi.ExecutionOptions;
+import org.hibernate.tool.schema.spi.ContributableMatcher;
+import org.hibernate.tool.schema.spi.SourceDescriptor;
+import org.hibernate.tool.schema.spi.TargetDescriptor;
+import java.util.Collections;
 
 /**
  * This is a modified version of the hibernate tools schema update.
@@ -41,42 +42,17 @@ public class JbpmSchemaUpdate {
 	private Dialect dialect;
     private List exceptions;
     private ServiceRegistry serviceRegistry;
+    private org.hibernate.boot.Metadata metadata;
 
-    public JbpmSchemaUpdate(Configuration cfg) throws HibernateException {
-		this( cfg, cfg.getProperties() );
-	}
-
-	public JbpmSchemaUpdate(Configuration cfg, Properties connectionProperties) throws HibernateException {
-		this.configuration = cfg;
-        Properties effectiveProperties = new Properties();
-        if (connectionProperties != null) {
-            effectiveProperties.putAll(connectionProperties);
-        }
-        effectiveProperties.putAll(cfg.getProperties());
-
-        StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder()
-                .applySettings(effectiveProperties);
-        this.serviceRegistry = registryBuilder.build();
-
-        this.dialect = serviceRegistry.getService(org.hibernate.engine.jdbc.dialect.spi.DialectFactory.class).buildDialect(effectiveProperties, null);
+    public JbpmSchemaUpdate(org.hibernate.boot.Metadata metadata, ServiceRegistry serviceRegistry) throws HibernateException {
+        this.metadata = metadata;
+        this.serviceRegistry = serviceRegistry;
+        this.dialect = serviceRegistry.getService(org.hibernate.engine.jdbc.env.spi.JdbcEnvironment.class).getDialect();
         this.connectionProvider = this.serviceRegistry.getService(org.hibernate.engine.jdbc.connections.spi.ConnectionProvider.class);
         exceptions = new ArrayList();
-	}
+    }
 
-/* COMMENTING OUT THIS CONSTRUCTOR AS Settings is problematic in Hibernate 4
-	public JbpmSchemaUpdate(Configuration cfg, Settings settings) throws HibernateException {
-		// This constructor will need to be refactored or removed as Settings object is not built this way.
-        // For now, let's adapt it similarly, though it's less ideal as 'settings' object might not be fully populated.
-        this.configuration = cfg;
-        StandardServiceRegistryBuilder registryBuilder = new StandardServiceRegistryBuilder()
-                .applySettings(cfg.getProperties()); // Assuming cfg.getProperties() is the best source here
-        this.serviceRegistry = registryBuilder.build();
 
-        this.dialect = serviceRegistry.getService(org.hibernate.engine.jdbc.dialect.spi.DialectFactory.class).buildDialect(cfg.getProperties(), null);
-        this.connectionProvider = this.serviceRegistry.getService(org.hibernate.engine.jdbc.connections.spi.ConnectionProvider.class);
-        exceptions = new ArrayList();
-	}
-*/
 	
 	public static void main(String[] args) {
 		try {
@@ -103,11 +79,7 @@ public class JbpmSchemaUpdate {
 					else if ( args[i].startsWith("--text") ) {
 						doUpdate = false;
 					}
-					else if ( args[i].startsWith("--naming=") ) {
-						// cfg.setNamingStrategy( // Replaced by hibernate.physical_naming_strategy property
-						//	(NamingStrategy) ReflectHelper.classForName( args[i].substring(9) ).newInstance()
-						// );
-					}
+					
 					else if (args[i].startsWith("--output=")) {
 						out = new File(args[i].substring(9));
 					}
@@ -125,7 +97,9 @@ public class JbpmSchemaUpdate {
 				cfg.setProperties(props);
 			}
 
-			new JbpmSchemaUpdate(cfg).execute(script, doUpdate, out);
+			            ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(cfg.getProperties()).build();
+            org.hibernate.boot.Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
+            new JbpmSchemaUpdate(metadata, serviceRegistry).execute(script, doUpdate, out);
 		}
 		catch (Exception e) {
 			log.error( "Error running schema update", e );
@@ -138,110 +112,65 @@ public class JbpmSchemaUpdate {
 	 */
 	public void execute(boolean script, boolean doUpdate, File out) {
 
-		// TODO: Hibernate 5 - This method needs a complete rewrite.
-        // configuration.generateSchemaUpdateScript is removed.
-        // SchemaUpdate tool should be used with Metadata.
-        log.warn("JbpmSchemaUpdate.execute() is disabled for Hibernate 5 migration.");
-        exceptions.clear();
-
-        if (script) {
-            System.out.println("-- Schema update script generation disabled for Hibernate 5 migration --");
-        }
-        if (doUpdate) {
-            log.info("Schema update execution disabled for Hibernate 5 migration.");
-        }
-        // Original logic commented out:
-        /*
 		log.info("Running hbm2ddl schema update");
 
-		Connection connection=null;
-		Statement stmt=null;
-		boolean autoCommitWasEnabled = true;
-		FileWriter writer = null;
-		
-		if (script && out != null) {
-			try {
-				log.info("Creating filewriter to file : " + out.getAbsolutePath());
-				writer = new FileWriter(out);
-			} catch (IOException e) {
-				log.debug("IOException while creating filewriter");
-				log.debug(e);
-			}
-		}
+		exceptions.clear();
 
-        exceptions.clear();
+		SchemaUpdate schemaUpdate = new SchemaUpdate();
 
-		try {
-
-			DatabaseMetadata meta;
-			try {
-				log.info("fetching database metadata");
-				connection = connectionProvider.getConnection();
-				if ( !connection.getAutoCommit() ) {
-					connection.commit();
-					connection.setAutoCommit(true);
-					autoCommitWasEnabled = false;
-				}
-				meta = new DatabaseMetadata(connection, dialect);
-				stmt = connection.createStatement();
-			}
-			catch (SQLException sqle) {
-                exceptions.add(sqle);
-				log.error("could not get database metadata", sqle);
-				throw sqle;
-			}
-
-			log.info("updating schema");
-
-			String[] createSQL = configuration.generateSchemaUpdateScript(dialect, meta);
-			for (int j = 0; j < createSQL.length; j++) {
-
-				final String sql = createSQL[j];
-				try {
+		if (doUpdate) {
+			schemaUpdate.execute(new TargetDescriptor() {
+				@Override
+				public void accept(String command) {
 					if (script) {
-						System.out.println(sql);
-						if (writer != null) {
-							writer.write(sql + ";\n");
+						log.info(command);
+					}
+					Connection connection = null;
+					Statement statement = null;
+					try {
+						connection = connectionProvider.getConnection();
+						statement = connection.createStatement();
+						statement.executeUpdate(command);
+					} catch (SQLException e) {
+						exceptions.add(e);
+					} finally {
+						if (statement != null) {
+							try {
+								statement.close();
+							} catch (SQLException e) {
+								log.debug("could not close jdbc statement", e);
+							}
+						}
+						if (connection != null) {
+							try {
+								connectionProvider.closeConnection(connection);
+							} catch (SQLException e) {
+								log.debug("could not close jdbc connection", e);
+							}
 						}
 					}
-					if (doUpdate) {
-						log.debug(sql);
-						stmt.executeUpdate(sql);
+				}
+			}, metadata, serviceRegistry, ContributableMatcher.ALL);
+		}
+
+		if (script) {
+			try (FileWriter writer = new FileWriter(out)) {
+				schemaUpdate.execute(new TargetDescriptor() {
+					@Override
+					public void accept(String command) {
+						try {
+							writer.write(command + ";\n");
+						} catch (IOException e) {
+							throw new RuntimeException(e);
+						}
 					}
-				}
-				catch (SQLException e) {
-                    exceptions.add(e);
-					log.error( "Unsuccessful: " + sql );
-					log.error( e.getMessage() );
-				}
+				}, metadata, serviceRegistry, ContributableMatcher.ALL);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
 			}
-			
-			if (writer != null) {
-				writer.close();
-			}
-
-			log.info("schema update complete");
-
 		}
-		catch (Exception e) {
-            exceptions.add(e);
-			log.error("could not complete schema update", e);
-		}
-		finally {
 
-			try {
-				if (stmt!=null) stmt.close();
-				if (!autoCommitWasEnabled) connection.setAutoCommit(false);
-				if (connection!=null) connection.close();
-				if (connectionProvider!=null) connectionProvider.close();
-			}
-			catch (Exception e) {
-                exceptions.add(e);
-				log.error("Error closing connection", e);
-			}
-
-		}
-        */
+		log.info("schema update complete");
 	}
 
     /**
@@ -253,9 +182,3 @@ public class JbpmSchemaUpdate {
     }
     
 }
-
-
-
-
-
-
