@@ -33,10 +33,10 @@ public class IntegerToLongConverter implements Converter {
   }
 
   public Object convert(Object o) {
-    return new Long( ((Number)o).longValue() );
+    return Long.valueOf( ((Number)o).longValue() );
   }
 
   public Object revert(Object o) {
-    return new Integer(((Long)o).intValue());
+    return Integer.valueOf(((Long)o).intValue());
   }
 }

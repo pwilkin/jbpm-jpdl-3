@@ -36,7 +36,7 @@ public class LongInfo extends AbstractObjectInfo {
     
     String contentText = getValueString(longElement);
     try {
-      l = new Long(contentText);
+      l = Long.valueOf(contentText);
     } catch (Exception e) {
       throw new JbpmException("content of "+XmlUtil.toString(longElement)+" could not be parsed as a long", e);
     }

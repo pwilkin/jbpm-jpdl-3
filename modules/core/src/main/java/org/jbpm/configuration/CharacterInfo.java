@@ -38,7 +38,7 @@ public class CharacterInfo extends AbstractObjectInfo {
     if (s!=null) {
       s = s.trim();
       if (s.length()==1) {
-        c = new Character(s.charAt(0)); 
+        c = Character.valueOf(s.charAt(0)); 
       }
     }
     if (c==null) {

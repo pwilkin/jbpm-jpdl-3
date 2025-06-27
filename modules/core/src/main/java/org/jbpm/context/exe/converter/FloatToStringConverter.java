@@ -37,7 +37,7 @@ public class FloatToStringConverter implements Converter {
   }
 
   public Object revert(Object o) {
-    return new Float((String)o);
+    return Float.valueOf((String)o);
   }
 
 }

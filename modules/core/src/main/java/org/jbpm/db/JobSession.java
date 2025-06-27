@@ -137,7 +137,7 @@ public class JobSession {
 
   public Job loadJob(long jobId) {
     try {
-      return (Job) session.load(Job.class, new Long(jobId));
+      return (Job) session.load(Job.class, Long.valueOf(jobId));
     } catch (Exception e) {
       log.error(e);
       throw new JbpmException("couldn't load job '"+jobId+"'", e);
@@ -146,7 +146,7 @@ public class JobSession {
 
   public Timer loadTimer(long timerId) {
     try {
-      return (Timer) session.load(Timer.class, new Long(timerId));
+      return (Timer) session.load(Timer.class, Long.valueOf(timerId));
     } catch (Exception e) {
       log.error(e);
       throw new JbpmException("couldn't load timer " + timerId, e);
@@ -167,7 +167,7 @@ public class JobSession {
 
   public Job getJob(long jobId) {
     try {
-      return (Job) session.get(Job.class, new Long(jobId));
+      return (Job) session.get(Job.class, Long.valueOf(jobId));
     } catch (Exception e) {
       log.error(e);
       throw new JbpmException("couldn't get job '"+jobId+"'", e);

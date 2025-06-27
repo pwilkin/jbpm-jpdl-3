@@ -122,7 +122,7 @@ public class GraphSession
   {
     try
     {
-      return (ProcessDefinition)session.load(ProcessDefinition.class, new Long(processDefinitionId));
+      return (ProcessDefinition)session.load(ProcessDefinition.class, Long.valueOf(processDefinitionId));
     }
     catch (Exception e)
     {
@@ -141,7 +141,7 @@ public class GraphSession
   {
     try
     {
-      return (ProcessDefinition)session.get(ProcessDefinition.class, new Long(processDefinitionId));
+      return (ProcessDefinition)session.get(ProcessDefinition.class, Long.valueOf(processDefinitionId));
     }
     catch (Exception e)
     {
@@ -339,7 +339,7 @@ public class GraphSession
   {
     try
     {
-      ProcessInstance processInstance = (ProcessInstance)session.load(ProcessInstance.class, new Long(processInstanceId));
+      ProcessInstance processInstance = (ProcessInstance)session.load(ProcessInstance.class, Long.valueOf(processInstanceId));
       return processInstance;
     }
     catch (Exception e)
@@ -358,7 +358,7 @@ public class GraphSession
   {
     try
     {
-      ProcessInstance processInstance = (ProcessInstance)session.get(ProcessInstance.class, new Long(processInstanceId));
+      ProcessInstance processInstance = (ProcessInstance)session.get(ProcessInstance.class, Long.valueOf(processInstanceId));
       return processInstance;
     }
     catch (Exception e)
@@ -379,7 +379,7 @@ public class GraphSession
   {
     try
     {
-      Token token = (Token)session.load(Token.class, new Long(tokenId));
+      Token token = (Token)session.load(Token.class, Long.valueOf(tokenId));
       return token;
     }
     catch (Exception e)
@@ -399,7 +399,7 @@ public class GraphSession
   {
     try
     {
-      Token token = (Token)session.get(Token.class, new Long(tokenId));
+      Token token = (Token)session.get(Token.class, Long.valueOf(tokenId));
       return token;
     }
     catch (Exception e)

@@ -33,11 +33,11 @@ public class FloatToDoubleConverter implements Converter {
   }
 
   public Object convert(Object o) {
-    return new Double(((Float)o).doubleValue());
+    return Double.valueOf(((Float)o).doubleValue());
   }
 
   public Object revert(Object o) {
-    return new Float(((Double)o).floatValue());
+    return Float.valueOf(((Double)o).floatValue());
   }
 
 }

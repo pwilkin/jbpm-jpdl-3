@@ -21,7 +21,6 @@
  */
 package org.jbpm.security;
 
-import java.security.AccessControlException;
 import java.security.Permission;
 
 import org.jbpm.svc.Service;
@@ -33,5 +32,5 @@ public interface AuthorizationService extends Service {
    * @throws AccessControlException if the current authenticated actor is not 
    * authorized.  
    */
-  void checkPermission(Permission permission) throws AccessControlException;
+  void checkPermission(Permission permission) throws SecurityException;
 }

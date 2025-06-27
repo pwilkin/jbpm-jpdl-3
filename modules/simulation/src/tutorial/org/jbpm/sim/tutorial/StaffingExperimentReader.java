@@ -68,7 +68,7 @@ public class StaffingExperimentReader extends ExperimentReader {
       for (Iterator iterator = pools.keySet().iterator(); iterator.hasNext();) {
         String name = (String) iterator.next();
         Integer size = (Integer) pools.get(name);
-        size = new Integer(size.intValue() + add);
+        size = Integer.valueOf(size.intValue() + add);
         generatedScenario.addResourcePool(name, size, (Double)costs.get(name));
       }
       

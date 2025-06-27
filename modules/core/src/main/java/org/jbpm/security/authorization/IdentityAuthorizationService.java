@@ -21,7 +21,6 @@
  */
 package org.jbpm.security.authorization;
 
-import java.security.AccessControlException;
 import java.security.Permission;
 
 import org.jbpm.security.AuthorizationService;
@@ -30,7 +29,7 @@ public class IdentityAuthorizationService implements AuthorizationService {
 
   private static final long serialVersionUID = 1L;
 
-  public void checkPermission(Permission permission) throws AccessControlException {
+  public void checkPermission(Permission permission) throws SecurityException {
     // String actorId = SecurityHelper.getAuthenticatedActorId();
     // TODO check if the actor has the proper permissions in the 
     // identity component

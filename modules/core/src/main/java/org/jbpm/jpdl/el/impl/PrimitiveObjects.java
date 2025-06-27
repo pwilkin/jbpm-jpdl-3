@@ -111,7 +111,7 @@ class PrimitiveObjects
       return mBytes [((int) pValue) - BYTE_LOWER_BOUND];
     }
     else {
-      return new Byte (pValue);
+      return Byte.valueOf(pValue);
     }
   }
 
@@ -123,7 +123,7 @@ class PrimitiveObjects
       return mCharacters [((int) pValue) - CHARACTER_LOWER_BOUND];
     }
     else {
-      return new Character (pValue);
+      return Character.valueOf(pValue);
     }
   }
 
@@ -135,7 +135,7 @@ class PrimitiveObjects
       return mShorts [((int) pValue) - SHORT_LOWER_BOUND];
     }
     else {
-      return new Short (pValue);
+      return Short.valueOf(pValue);
     }
   }
 
@@ -147,7 +147,7 @@ class PrimitiveObjects
       return mIntegers [((int) pValue) - INTEGER_LOWER_BOUND];
     }
     else {
-      return new Integer (pValue);
+      return Integer.valueOf(pValue);
     }
   }
 
@@ -159,20 +159,20 @@ class PrimitiveObjects
       return mLongs [((int) pValue) - LONG_LOWER_BOUND];
     }
     else {
-      return new Long (pValue);
+      return Long.valueOf(pValue);
     }
   }
 
   //-------------------------------------
   public static Float getFloat (float pValue)
   {
-    return new Float (pValue);
+    return Float.valueOf(pValue);
   }
 
   //-------------------------------------
   public static Double getDouble (double pValue)
   {
-    return new Double (pValue);
+    return Double.valueOf(pValue);
   }
 
   //-------------------------------------
@@ -223,7 +223,7 @@ class PrimitiveObjects
     Byte [] ret = new Byte [len];
     byte val = (byte) BYTE_LOWER_BOUND;
     for (int i = 0; i < len; i++, val++) {
-      ret [i] = new Byte (val);
+      ret [i] = Byte.valueOf(val);
     }
     return ret;
   }
@@ -235,7 +235,7 @@ class PrimitiveObjects
     Character [] ret = new Character [len];
     char val = (char) CHARACTER_LOWER_BOUND;
     for (int i = 0; i < len; i++, val++) {
-      ret [i] = new Character (val);
+      ret [i] = Character.valueOf(val);
     }
     return ret;
   }
@@ -247,7 +247,7 @@ class PrimitiveObjects
     Short [] ret = new Short [len];
     short val = (short) SHORT_LOWER_BOUND;
     for (int i = 0; i < len; i++, val++) {
-      ret [i] = new Short (val);
+      ret [i] = Short.valueOf(val);
     }
     return ret;
   }
@@ -259,7 +259,7 @@ class PrimitiveObjects
     Integer [] ret = new Integer [len];
     int val = (int) INTEGER_LOWER_BOUND;
     for (int i = 0; i < len; i++, val++) {
-      ret [i] = new Integer (val);
+      ret [i] = Integer.valueOf(val);
     }
     return ret;
   }
@@ -271,7 +271,7 @@ class PrimitiveObjects
     Long [] ret = new Long [len];
     long val = (long) LONG_LOWER_BOUND;
     for (int i = 0; i < len; i++, val++) {
-      ret [i] = new Long (val);
+      ret [i] = Long.valueOf(val);
     }
     return ret;
   }

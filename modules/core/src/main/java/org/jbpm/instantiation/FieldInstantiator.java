@@ -120,21 +120,21 @@ public class FieldInstantiator implements Instantiator {
       if ( type == String.class ) {
         value = propertyElement.getText();
       } else if ( (type==Integer.class) || (type==int.class) ) {
-        value = new Integer( propertyElement.getTextTrim() );
+        value = Integer.valueOf( propertyElement.getTextTrim() );
       } else if ( (type==Long.class) || (type==long.class) ) {
-        value = new Long( propertyElement.getTextTrim() );
+        value = Long.valueOf( propertyElement.getTextTrim() );
       } else if ( (type==Float.class ) || (type==float.class) ) {
-        value = new Float( propertyElement.getTextTrim() );
+        value = Float.valueOf( propertyElement.getTextTrim() );
       } else if ( (type==Double.class ) || (type==double.class) ) {
-        value = new Double( propertyElement.getTextTrim() );
+        value = Double.valueOf( propertyElement.getTextTrim() );
       } else if ( (type==Boolean.class ) || (type==boolean.class) ) {
         value = Boolean.valueOf( propertyElement.getTextTrim() );
       } else if ( (type==Character.class ) || (type==char.class) ) {
-        value = new Character( propertyElement.getTextTrim().charAt(0) );
+        value = Character.valueOf( propertyElement.getTextTrim().charAt(0) );
       } else if ( (type==Short.class ) || (type==short.class) ) {
-        value = new Short( propertyElement.getTextTrim() );
+        value = Short.valueOf( propertyElement.getTextTrim() );
       } else if ( (type==Byte.class ) || (type==byte.class) ) {
-        value = new Byte( propertyElement.getTextTrim() );
+        value = Byte.valueOf( propertyElement.getTextTrim() );
       } else if (type==List.class || type==Collection.class) {
         value = getCollection(propertyElement, new ArrayList());
       } else if (type==Set.class) {

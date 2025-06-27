@@ -40,7 +40,8 @@ import org.jbpm.db.ScriptTargetDescriptor;
 import org.jbpm.db.StringWriterScriptTargetOutput;
 import org.hibernate.tool.schema.spi.ExceptionHandler;
 import org.hibernate.tool.schema.spi.CommandAcceptanceException;
-import org.hibernate.tool.schema.spi.SchemaFilter;
+import org.hibernate.boot.MetadataSources;
+
 
 /**
  * This is a modified version of the hibernate tools schema update.
@@ -53,7 +54,6 @@ public class JbpmSchemaUpdate {
 
 	private static final Log log = LogFactory.getLog(JbpmSchemaUpdate.class);
 	private ConnectionProvider connectionProvider; // Corrected: Use short name, relies on correct import
-	private Configuration configuration;
 	private Dialect dialect;
     private List exceptions;
     private ServiceRegistry serviceRegistry;
@@ -80,6 +80,8 @@ public class JbpmSchemaUpdate {
 			
 			File out = null;
 
+			List<String> configFiles = new ArrayList<>();
+
 			for ( int i=0; i<args.length; i++ )  {
 				if( args[i].startsWith("--") ) {
 					if( args[i].equals("--quiet") ) {
@@ -89,7 +91,7 @@ public class JbpmSchemaUpdate {
 						propFile = args[i].substring(13);
 					}
 					else if ( args[i].startsWith("--config=") ) {
-						cfg.configure( args[i].substring(9) );
+						configFiles.add(args[i].substring(9));
 					}
 					else if ( args[i].startsWith("--text") ) {
 						doUpdate = false;
@@ -100,20 +102,24 @@ public class JbpmSchemaUpdate {
 					}
 				}
 					else {
-					cfg.addFile(args[i]);
+					configFiles.add(args[i]);
 				}
 
 			}
 			
-			if (propFile!=null) {
-				Properties props = new Properties();
-				props.putAll( cfg.getProperties() );
-				props.load( new FileInputStream(propFile) );
-				cfg.setProperties(props);
+			StandardServiceRegistryBuilder serviceRegistryBuilder = new StandardServiceRegistryBuilder();
+			if (propFile != null) {
+				serviceRegistryBuilder.loadProperties(new File(propFile));
 			}
 
-			            ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(cfg.getProperties()).build();
-            org.hibernate.boot.Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
+			ServiceRegistry serviceRegistry = serviceRegistryBuilder.build();
+			MetadataSources metadataSources = new MetadataSources(serviceRegistry);
+
+			for (String configFile : configFiles) {
+				metadataSources.addFile(configFile);
+			}
+
+			org.hibernate.boot.Metadata metadata = metadataSources.buildMetadata();
             new JbpmSchemaUpdate(metadata, serviceRegistry).execute(script, doUpdate, out);
 		}
 		catch (Exception e) {

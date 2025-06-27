@@ -190,7 +190,7 @@ public class TaskMgmtSession implements Serializable {
   public TaskInstance loadTaskInstance(long taskInstanceId) {
     TaskInstance taskInstance = null;
     try {
-      taskInstance = (TaskInstance) session.load(TaskInstance.class, new Long(taskInstanceId));
+      taskInstance = (TaskInstance) session.load(TaskInstance.class, Long.valueOf(taskInstanceId));
     } catch (Exception e) {
       log.error(e);
       jbpmSession.handleException();
@@ -205,7 +205,7 @@ public class TaskMgmtSession implements Serializable {
   public TaskInstance getTaskInstance(long taskInstanceId) {
     TaskInstance taskInstance = null;
     try {
-      taskInstance = (TaskInstance) session.get(TaskInstance.class, new Long(taskInstanceId));
+      taskInstance = (TaskInstance) session.get(TaskInstance.class, Long.valueOf(taskInstanceId));
     } catch (Exception e) {
       log.error(e);
       jbpmSession.handleException();

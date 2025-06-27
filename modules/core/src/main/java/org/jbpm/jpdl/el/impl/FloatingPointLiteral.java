@@ -84,7 +84,7 @@ public class FloatingPointLiteral
    **/
   static Object getValueFromToken (String pToken)
   {
-    return new Double (pToken);
+    return Double.valueOf(pToken);
   }
 
   //-------------------------------------

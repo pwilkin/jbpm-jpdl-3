@@ -21,7 +21,6 @@
  */
 package org.jbpm.security.authentication;
 
-import java.security.AccessController;
 import java.security.Principal;
 import java.util.Set;
 
@@ -92,7 +91,7 @@ public class SubjectAuthenticationService implements AuthenticationService {
   public String getActorId() {
     if (actorId==null) {
 
-      Subject subject = Subject.getSubject(AccessController.getContext());
+      Subject subject = Subject.getSubject(null);
       if (subject==null) {
         log.warn("no javax.security.auth.Subject exists! Cannot set jbpm actorId");
         return null;

@@ -37,7 +37,7 @@ public class DoubleToStringConverter implements Converter {
   }
 
   public Object revert(Object o) {
-    return new Double((String)o);
+    return Double.valueOf((String)o);
   }
 
 }

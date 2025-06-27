@@ -55,8 +55,8 @@ public class ByteArrayDbTest extends AbstractDbTestCase {
     ByteArray copiedByteArray = new ByteArray(retrievedByteArray);
     session.save(copiedByteArray);
     newTransaction();
-    retrievedByteArray = (ByteArray) session.load(ByteArray.class, new Long(retrievedByteArray.getId()));
-    copiedByteArray = (ByteArray) session.load(ByteArray.class, new Long(copiedByteArray.getId()));
+    retrievedByteArray = (ByteArray) session.load(ByteArray.class, Long.valueOf(retrievedByteArray.getId()));
+    copiedByteArray = (ByteArray) session.load(ByteArray.class, Long.valueOf(copiedByteArray.getId()));
     assertNotSame(retrievedByteArray.getByteBlocks(), copiedByteArray.getByteBlocks());
     for (int i=0; i<retrievedByteArray.getByteBlocks().size(); i++) {
       byte[] retrievedBytes = (byte[]) retrievedByteArray.getByteBlocks().get(i);

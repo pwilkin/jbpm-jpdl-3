@@ -37,6 +37,6 @@ public class CharacterToStringConverter implements Converter {
   }
 
   public Object revert(Object o) {
-    return new Character(((String)o).charAt(0));
+    return Character.valueOf(((String)o).charAt(0));
   }
 }

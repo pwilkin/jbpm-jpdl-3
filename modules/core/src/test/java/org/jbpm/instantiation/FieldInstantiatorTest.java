@@ -219,7 +219,7 @@ public class FieldInstantiatorTest extends AbstractJbpmTestCase {
     List expectedNumbers = new ArrayList();
     expectedNumbers.add(new Integer(1));
     expectedNumbers.add(new Integer(2));
-    expectedNumbers.add(new Integer(3));
+    expectedNumbers.add(Integer.valueOf(3));
     
     assertEquals(expectedNumbers, listAction.numbers);
   }
@@ -301,7 +301,7 @@ public class FieldInstantiatorTest extends AbstractJbpmTestCase {
     Map expectedNumbers = new HashMap();
     expectedNumbers.put(new Integer(1), new Long(1));
     expectedNumbers.put(new Integer(2), new Long(2));
-    expectedNumbers.put(new Integer(3), new Long(3));
+    expectedNumbers.put(Integer.valueOf(3), Long.valueOf(3L));
     
     assertEquals(expectedNumbers, mapAction.numbers);
   }
@@ -380,7 +380,7 @@ public class FieldInstantiatorTest extends AbstractJbpmTestCase {
     Set expectedNumbers = new HashSet();
     expectedNumbers.add(new Integer(1));
     expectedNumbers.add(new Integer(2));
-    expectedNumbers.add(new Integer(3));
+    expectedNumbers.add(Integer.valueOf(3));
     
     assertEquals(expectedNumbers, setAction.numbers);
   }
@@ -420,7 +420,7 @@ public class FieldInstantiatorTest extends AbstractJbpmTestCase {
     Collection expectedNumbers = new ArrayList();
     expectedNumbers.add(new Integer(1));
     expectedNumbers.add(new Integer(2));
-    expectedNumbers.add(new Integer(3));
+    expectedNumbers.add(Integer.valueOf(3));
     
     assertEquals(expectedNumbers, collectionAction.numbers);
   }

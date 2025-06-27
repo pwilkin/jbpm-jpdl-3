@@ -34,10 +34,10 @@ public class DateToLongConverter implements Converter {
   }
 
   public Object convert(Object o) {
-    return new Long(((Date)o).getTime());
+    return Long.valueOf(((Date)o).getTime());
   }
 
   public Object revert(Object o) {
-    return new Date(((Long)o).longValue());
+    return new Date(Long.valueOf(((Long)o).longValue()));
   }
 }

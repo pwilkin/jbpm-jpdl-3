@@ -36,7 +36,7 @@ public class DoubleInfo extends AbstractObjectInfo {
     
     String contentText = getValueString(doubleElement);
     try {
-      d = (new Double(contentText));
+      d = (Double.valueOf(contentText));
     } catch (Exception e) {
       throw new JbpmException("content of "+XmlUtil.toString(doubleElement)+" could not be parsed as a double", e);
     }

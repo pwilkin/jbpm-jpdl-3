@@ -91,7 +91,7 @@ public class ObjectFactoryUserGuideTest extends AbstractJbpmTestCase {
     Map map = (Map) objectFactory.createObject("numbers");
     assertEquals("one", map.get(new Integer(1)));
     assertEquals("two", map.get(new Integer(2)));
-    assertEquals("three", map.get(new Integer(3)));
+    assertEquals("three", map.get(Integer.valueOf(3)));
   }
   
   public void testInjection() {

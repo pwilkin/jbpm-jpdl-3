@@ -33,10 +33,10 @@ public class ShortToLongConverter implements Converter {
   }
 
   public Object convert(Object o) {
-    return new Long( ((Number)o).longValue() );
+    return Long.valueOf( ((Number)o).longValue() );
   }
   
   public Object revert(Object o) {
-    return new Short(((Long)o).shortValue());
+    return Short.valueOf(((Long)o).shortValue());
   }
 }

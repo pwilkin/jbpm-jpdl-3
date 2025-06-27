@@ -378,7 +378,7 @@ public class ObjectFactoryTest extends AbstractJbpmTestCase {
       "</beans>"
     );
     
-    assertEquals(new Character('a'), objectFactory.createObject("level"));
+    assertEquals(Character.valueOf('a'), objectFactory.createObject("level"));
   }
   
   public void testBoolean() {

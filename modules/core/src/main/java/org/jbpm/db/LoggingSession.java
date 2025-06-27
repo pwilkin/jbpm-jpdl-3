@@ -57,7 +57,7 @@ public class LoggingSession {
   public Map findLogsByProcessInstance(long processInstanceId) {
     Map tokenLogs = new HashMap();
     try {
-      ProcessInstance processInstance = (ProcessInstance) session.load(ProcessInstance.class, new Long(processInstanceId));
+      ProcessInstance processInstance = (ProcessInstance) session.load(ProcessInstance.class, Long.valueOf(processInstanceId));
       collectTokenLogs(tokenLogs, processInstance.getRootToken());
     } catch (Exception e) {
       log.error(e);
@@ -87,7 +87,7 @@ public class LoggingSession {
   public List findLogsByToken(long tokenId) {
     List result = null;
     try {
-      Token token = (Token) session.load(Token.class, new Long(tokenId));
+      Token token = (Token) session.load(Token.class, Long.valueOf(tokenId));
       Query query = session.getNamedQuery("LoggingSession.findLogsByToken");
       query.setParameter("token", token);
       result = query.list();
@@ -118,7 +118,7 @@ public class LoggingSession {
   public ProcessLog loadProcessLog(long processLogId) {
     ProcessLog processLog = null;
     try {
-      processLog = (ProcessLog) session.load(ProcessLog.class, new Long(processLogId));
+      processLog = (ProcessLog) session.load(ProcessLog.class, Long.valueOf(processLogId));
     } catch (Exception e) {
       log.error(e);
       jbpmSession.handleException();
@@ -133,7 +133,7 @@ public class LoggingSession {
   public ProcessLog getProcessLog(long processLogId) {
     ProcessLog processLog = null;
     try {
-      processLog = (ProcessLog) session.get(ProcessLog.class, new Long(processLogId));
+      processLog = (ProcessLog) session.get(ProcessLog.class, Long.valueOf(processLogId));
     } catch (Exception e) {
       log.error(e);
       jbpmSession.handleException();

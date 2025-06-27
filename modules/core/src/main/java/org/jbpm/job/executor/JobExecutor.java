@@ -135,7 +135,7 @@ public class JobExecutor implements Serializable {
   }
   
   public void addMonitoredJobId(String threadName, long jobId) {
-    monitoredJobIds.put(threadName, new Long(jobId));
+    monitoredJobIds.put(threadName, Long.valueOf(jobId));
   }
   
   public void removeMonitoredJobId(String threadName) {

@@ -315,7 +315,7 @@ import org.jbpm.jpdl.el.ELException;
 
 public class Coercions
 {
-   private static final Number ZERO = new Integer(0);
+   private static final Number ZERO = Integer.valueOf(0);
   //-------------------------------------
   /**
    *

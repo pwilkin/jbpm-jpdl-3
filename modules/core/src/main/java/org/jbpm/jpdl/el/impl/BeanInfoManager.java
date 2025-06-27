@@ -362,7 +362,7 @@ public class BeanInfoManager {
         Method m;
         try {
           m = pClass.getDeclaredMethod(pMethod.getName(), pMethod.getParameterTypes());
-        } catch (java.security.AccessControlException ex) {
+        } catch (SecurityException ex) {
           // kludge to accommodate J2EE RI's default settings
           // TODO: see if we can simply replace
           // getDeclaredMethod() with getMethod() ...?

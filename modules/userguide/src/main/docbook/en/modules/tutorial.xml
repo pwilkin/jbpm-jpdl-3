@@ -349,7 +349,7 @@ processInstance.signal();
 
 <emphasis role="bold">// The variables are accessible via the contextInstance. </emphasis>
 
-assertEquals(new Integer(500), 
+assertEquals(Integer.valueOf(500), 
              contextInstance.getVariable("amount"));
 assertEquals("i met my deadline", 
              contextInstance.getVariable("reason"));</programlisting>

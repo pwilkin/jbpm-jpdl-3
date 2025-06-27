@@ -36,7 +36,7 @@ public class FloatInfo extends AbstractObjectInfo {
     
     String contentText = getValueString(floatElement);
     try {
-      f = (new Float(contentText));
+      f = (Float.valueOf(contentText));
     } catch (Exception e) {
       throw new JbpmException("content of "+XmlUtil.toString(floatElement)+" could not be parsed as a float", e);
     }

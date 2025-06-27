@@ -154,8 +154,8 @@ public class FunctionInvocation
     Class[] params = target.getParameterTypes();
     if (params.length != argumentList.size())
       pLogger.logError(Constants.INAPPROPRIATE_FUNCTION_ARG_COUNT,
-		       functionName, new Integer(params.length),
-		       new Integer(argumentList.size()));
+		       functionName, Integer.valueOf(params.length),
+		       Integer.valueOf(argumentList.size()));
 
     // now, walk through each parameter, evaluating and casting its argument
     Object[] arguments = new Object[argumentList.size()];
