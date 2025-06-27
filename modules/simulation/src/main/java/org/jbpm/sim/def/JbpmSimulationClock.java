@@ -20,6 +20,7 @@ import desmoj.core.simulator.SimTime;
  * 
  * @author bernd.ruecker@camunda.com
  */
+@SuppressWarnings("deprecation")
 public class JbpmSimulationClock implements Clock.DateGenerator, Observer {
   
   /**

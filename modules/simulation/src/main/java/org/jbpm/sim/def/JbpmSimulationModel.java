@@ -45,6 +45,7 @@ import desmoj.core.statistic.TimeSeries;
  * 
  * @author bernd.ruecker@camunda.com
  */
+@SuppressWarnings("deprecation")
 public abstract class JbpmSimulationModel extends Model {
 
   private static Log log = LogFactory.getLog(JbpmSimulationModel.class);

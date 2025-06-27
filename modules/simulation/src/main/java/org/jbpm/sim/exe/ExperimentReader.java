@@ -256,7 +256,7 @@ public class ExperimentReader implements ProblemListener {
 
       String poolName = resourcePoolElement.attributeValue("name");
       String poolSizeText = resourcePoolElement.attributeValue("pool-size");
-      Integer poolSize = new Integer(poolSizeText);
+      Integer poolSize = Integer.valueOf(poolSizeText);
       scenario.addResourcePool(poolName, poolSize, readCostPerTimeUnit(resourcePoolElement));
     }
     
@@ -296,7 +296,7 @@ public class ExperimentReader implements ProblemListener {
     if (costPerTimeUnitText!=null)
       return Double.valueOf(costPerTimeUnitText);
     else
-      return new Double(0);
+      return Double.valueOf(0);
   }  
 
   private void readSimProcess(JbpmSimulationScenario scenario, Element processElement) {

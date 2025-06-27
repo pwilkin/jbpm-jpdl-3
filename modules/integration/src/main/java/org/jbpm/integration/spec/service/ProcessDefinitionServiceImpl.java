@@ -166,6 +166,6 @@ public class ProcessDefinitionServiceImpl extends AbstractProcessDefinitionServi
     if (id == null)
       throw new IllegalStateException("Cannot obtain id property from: " + key);
 
-    return new Long(id);
+    return Long.valueOf(id);
   }
 }

@@ -187,12 +187,12 @@ public class IdentitySession implements IdentityService, ExpressionSession
 
   public User loadUser(long userId)
   {
-    return (User)session.load(User.class, new Long(userId));
+    return (User)session.load(User.class, Long.valueOf(userId));
   }
 
   public Group loadGroup(long groupId)
   {
-    return (Group)session.load(Group.class, new Long(groupId));
+    return (Group)session.load(Group.class, Long.valueOf(groupId));
   }
 
   public void deleteGroup(Group group)

@@ -195,6 +195,6 @@ public class TaskInstanceServiceImpl extends AbstractService implements TaskInst
     if (id == null)
       throw new IllegalStateException("Cannot obtain id property from: " + key);
 
-    return new Long(id);
+    return Long.valueOf(id);
   }
 }

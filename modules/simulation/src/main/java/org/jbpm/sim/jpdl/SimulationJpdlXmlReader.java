@@ -103,7 +103,7 @@ public class SimulationJpdlXmlReader extends JpdlXmlReader {
 
       String poolName = resourcePoolElement.attributeValue("name");
       String poolSizeText = resourcePoolElement.attributeValue("pool-size");
-      Integer poolSize = new Integer(poolSizeText);
+      Integer poolSize = Integer.valueOf(poolSizeText);
       Double costPerTimeUnit = readCostPerTimeUnit(resourcePoolElement);
       
       simulationDefinition.addResourcePool(poolName, poolSize, costPerTimeUnit);
@@ -118,7 +118,7 @@ public class SimulationJpdlXmlReader extends JpdlXmlReader {
       if (swimlaneElement.attributeValue("pool-size")!=null) {
         String poolName = swimlaneElement.attributeValue("name");
         String poolSizeText = swimlaneElement.attributeValue("pool-size");
-        Integer poolSize = new Integer(poolSizeText);
+        Integer poolSize = Integer.valueOf(poolSizeText);
         Double costPerTimeUnit = readCostPerTimeUnit(swimlaneElement);
 
         simulationDefinition.addResourcePool(poolName, poolSize, costPerTimeUnit);
@@ -166,7 +166,7 @@ public class SimulationJpdlXmlReader extends JpdlXmlReader {
     if (costPerTimeUnitText!=null)
       return Double.valueOf(costPerTimeUnitText);
     else
-      return new Double(0);
+      return Double.valueOf(0);
   }
 
   public Task readTask(Element taskElement, TaskMgmtDefinition taskMgmtDefinition, TaskNode taskNode) {

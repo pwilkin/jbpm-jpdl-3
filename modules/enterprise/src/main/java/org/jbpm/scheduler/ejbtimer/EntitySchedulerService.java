@@ -41,7 +41,7 @@ public class EntitySchedulerService implements SchedulerService {
 		jobSession.saveJob(timer);
 		session.flush();
 		try {
-			LocalTimerEntity timerEntity = timerEntityHome.findByPrimaryKey(new Long(timer.getId()));
+			LocalTimerEntity timerEntity = timerEntityHome.findByPrimaryKey(Long.valueOf(timer.getId()));
 			timerEntity.createTimer(timer);
 		}
 		catch (FinderException e) {

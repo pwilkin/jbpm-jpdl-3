@@ -14,6 +14,7 @@ import desmoj.core.simulator.SimTime;
 import desmoj.core.statistic.Tally;
 import desmoj.core.statistic.TimeSeries;
 
+@SuppressWarnings("deprecation")
 public class ResourcePool {
   
   private static Log log = LogFactory.getLog(ResourcePool.class);
@@ -86,6 +87,7 @@ public class ResourcePool {
         new SimTime(Double.MAX_VALUE), // stop
         false); 
     availableResourceTimeSeries.connectToPlotter(new Observer() {
+      @SuppressWarnings("deprecation")
       public void update(Observable observable, Object o) {
         // the TimeSeries does nothing if no observer is connected, so just connect a dummy
       }

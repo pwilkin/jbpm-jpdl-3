@@ -416,7 +416,7 @@ public class Coercions
     }
     else if (pValue instanceof Character) {
       char val = ((Character) pValue).charValue ();
-      return coerceToPrimitiveNumber (new Short((short) val), pClass);
+      return coerceToPrimitiveNumber (Short.valueOf((short) val), pClass);
     }
     else if (pValue instanceof Boolean) {
       if (pLogger.isLoggingError ()) {
