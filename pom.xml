@@ -16,7 +16,7 @@
   <groupId>org.jbpm.jbpm3</groupId>
   <artifactId>jbpm</artifactId>
   <packaging>pom</packaging>
-  <version>3.3.1.GA</version>
+  <version>3.4.0</version>
 
   <!-- Parent -->
   <parent>
@@ -42,24 +42,24 @@
 
   <!-- Properties -->
   <properties>
-    <apache.ant.version>1.7.0</apache.ant.version>
+    <apache.ant.version>1.10.15</apache.ant.version>
     <apache.cactus.version>1.8.0</apache.cactus.version>
-    <apache.jackrabbit.version>1.4.5</apache.jackrabbit.version>
-    <birt.version>2.2.2</birt.version>
+    <apache.jackrabbit.version>2.20.x</apache.jackrabbit.version>
+    <birt.version>4.18</birt.version>
     <bpm.spec.version>1.0.0-Alpha1</bpm.spec.version>
-    <bsh.version>1.3.0</bsh.version>
-    <commons.fileupload.version>1.2.1</commons.fileupload.version>
-    <commons.io.version>1.4</commons.io.version>
-    <commons.logging.version>1.1.1</commons.logging.version>
-    <desmoj.version>2.1.1</desmoj.version>
-    <dom4j.version>1.6.1</dom4j.version> <!-- Hibernate 5 still uses dom4j but consider if this specific version is optimal -->
-    <drools.version>4.0.7</drools.version>
-    <dumbster.version>1.6</dumbster.version>
+    <bsh.version>2.0b4</bsh.version>
+    <commons.fileupload.version>1.6.0</commons.fileupload.version>
+    <commons.io.version>2.19.0</commons.io.version>
+    <commons.logging.version>1.3.4</commons.logging.version>
+    <desmoj.version>2.5.1e</desmoj.version>
+    <dom4j.version>2.1.4</dom4j.version> <!-- Hibernate 5 still uses dom4j but consider if this specific version is optimal -->
+    <drools.version>10.0.0.Final</drools.version>
+    <dumbster.version>1.7.1</dumbster.version>
     <hibernate.version>6.4.4.Final</hibernate.version>
     <!--hibernate.commons.annotations.version>3.2.0.Final</hibernate.commons.annotations.version--> <!-- Not needed for H4+ -->
-    <hibernate.validator.version>6.0.23.Final</hibernate.validator.version> <!-- Validator 6.x for Hibernate 5.x -->
-    <izpack.version>4.1.0</izpack.version>
-    <jasper.reports.version>3.0.0</jasper.reports.version>
+    <hibernate.validator.version>8.0.2.Final</hibernate.validator.version> <!-- Validator 6.x for Hibernate 5.x -->
+    <izpack.version>5.2.4</izpack.version>
+    <jasper.reports.version>7.0.3</jasper.reports.version>
     <javax.ejb.version>3.0</javax.ejb.version>
     <javax.el.version>1.2</javax.el.version>
     <javax.faces.version>1.2_03</javax.faces.version>
@@ -70,26 +70,26 @@
     <javax.servlet.version>2.5</javax.servlet.version>
     <javax.persistence.version>1.0</javax.persistence.version>
     <javax.jaxb.version>2.1</javax.jaxb.version>
-    <jaxen.version>1.1.1</jaxen.version>
+    <jaxen.version>2.0.0</jaxen.version>
     <jbpm.designer.version>3.1.6</jbpm.designer.version>
     <jbpm.gwt-console.version>1.0.0.Beta2</jbpm.gwt-console.version>
     <jbpm.jsf-console.version>3.3.1.GA</jbpm.jsf-console.version>
     <jboss.client.version>4.2.2.GA</jboss.client.version>
     <jboss.gravel.version>1.0.0.GA</jboss.gravel.version>
-    <jboss.seam.version>2.0.2.GA</jboss.seam.version>
+    <jboss.seam.version>2.3.1.Final</jboss.seam.version>
     <junit.version>3.8.1</junit.version>
-    <oscache.version>2.4</oscache.version>
-    <poi.version>3.0.2-FINAL</poi.version>
-    <richfaces.ui.version>3.2.1.GA</richfaces.ui.version>
+    <oscache.version>2.4.1</oscache.version>
+    <poi.version>5.4.1</poi.version>
+    <richfaces.ui.version>4.5.17.Final</richfaces.ui.version>
     <report-server.version>1.0.0.Beta1</report-server.version>
-    <slf4j.version>1.5.5</slf4j.version>
+    <slf4j.version>2.0.17</slf4j.version>
     <sun.facelets.version>1.1.14</sun.facelets.version>
 
     <!-- Database Driver Versions  -->
-    <hsqldb.version>1.8.0.7</hsqldb.version>
-    <mysql.connector.version>5.0.8</mysql.connector.version>
-    <postgresql.version>8.3-603.jdbc3</postgresql.version>
-    <jtds.version>1.2.2</jtds.version>
+    <hsqldb.version>2.7.4</hsqldb.version>
+    <mysql.connector.version>8.4.0</mysql.connector.version>
+    <postgresql.version>42.7.7</postgresql.version>
+    <jtds.version>1.3.1</jtds.version>
   </properties>
 
   <!-- DependencyManagement -->
