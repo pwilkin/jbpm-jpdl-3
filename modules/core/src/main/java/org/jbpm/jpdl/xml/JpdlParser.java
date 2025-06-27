@@ -142,7 +142,7 @@ public class JpdlParser implements Serializable {
       Problem problem = new Problem(level, pe.getMessage(), pe);
       problem.setResource(pe.getSystemId());
       int line = pe.getLineNumber();
-      if (line != -1) problem.setLine(new Integer(line));
+      if (line != -1) problem.setLine(Integer.valueOf(line));
       problemListener.addProblem(problem);
     }
   }

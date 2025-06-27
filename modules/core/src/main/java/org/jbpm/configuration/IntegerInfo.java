@@ -36,7 +36,7 @@ public class IntegerInfo extends AbstractObjectInfo {
     
     String contentText = getValueString(integerElement);
     try {
-      i = new Integer(contentText);
+      i = Integer.valueOf(contentText);
     } catch (Exception e) {
       throw new JbpmException("content of "+XmlUtil.toString(integerElement)+" could not be parsed as a integer", e);
     }

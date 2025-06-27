@@ -30,7 +30,7 @@ import org.jbpm.identity.Entity;
  * IdentityLoginModule enforces the secirity permissions modelled as
  * in the package org.jbpm.identity.
  */
-public class IdentityPolicy extends Policy {
+public class IdentityPolicy {
   
   public static final PermissionCollection ALL_PERMISSIONSCOLLECTION = new Permissions();
   static {
@@ -38,16 +38,7 @@ public class IdentityPolicy extends Policy {
     ALL_PERMISSIONSCOLLECTION.setReadOnly();
   }
   
-  public void refresh() {
-  }
-
-  public PermissionCollection getPermissions(CodeSource codesource) {
-    // no checks are done based on the origin of the code
-    // checks are only based on *who* is running the code.
-    return ALL_PERMISSIONSCOLLECTION;
-  }
-  
-  public PermissionCollection getPermissions(ProtectionDomain domain) {
+  public boolean implies(ProtectionDomain domain, Permission permission) {
     PermissionCollection permissionCollection = new Permissions();
     
     Principal[] principals = domain.getPrincipals();
@@ -66,10 +57,6 @@ public class IdentityPolicy extends Policy {
       }
     }
     
-    return super.getPermissions(domain);
-  }
-  
-  public boolean implies(ProtectionDomain domain, Permission permission) {
-    return getPermissions(domain).implies(permission);
+    return permissionCollection.implies(permission);
   }
 }

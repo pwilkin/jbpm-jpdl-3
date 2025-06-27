@@ -87,7 +87,7 @@ public class GetSimulationInputCommand extends GetProcessDefinitionCommand {
   
 
   private void queryProcessStatistics(JbpmContext jbpmContext, ProcessDefinition pd, BamSimulationProposal result) {
-    Query decisionQuery = jbpmContext.getSession().getNamedQuery("Simulation.calculateProcessInstanceStartInterval");
+    Query decisionQuery = jbpmContext.getSession().createNamedQuery("Simulation.calculateProcessInstanceStartInterval");
   decisionQuery.setParameter("fromTime", fromTimeOfDay);
   decisionQuery.setParameter("tillTime", tillTimeOfDay);
     decisionQuery.setParameter("processDefinitionId", pd.getId());
@@ -110,7 +110,7 @@ public class GetSimulationInputCommand extends GetProcessDefinitionCommand {
   }
 
   private void queryDecisionStatistics(JbpmContext jbpmContext, ProcessDefinition pd, BamSimulationProposal result) {
-    Query decisionQuery = jbpmContext.getSession().getNamedQuery("Simulation.calculateAverageTimeForDecisions");
+    Query decisionQuery = jbpmContext.getSession().createNamedQuery("Simulation.calculateAverageTimeForDecisions");
     decisionQuery.setParameter("fromTime", fromTimeOfDay);
     decisionQuery.setParameter("tillTime", tillTimeOfDay);
     decisionQuery.setParameter("processDefinition", pd);
@@ -138,7 +138,7 @@ public class GetSimulationInputCommand extends GetProcessDefinitionCommand {
   private void queryStateStatistics(JbpmContext jbpmContext, ProcessDefinition pd, BamSimulationProposal result) {
     Query nodeQuery = null;
     
-    nodeQuery = jbpmContext.getSession().getNamedQuery("Simulation.calculateAverageTimeForStates");
+    nodeQuery = jbpmContext.getSession().createNamedQuery("Simulation.calculateAverageTimeForStates");
     
     nodeQuery.setParameter("fromTime", fromTimeOfDay);
     nodeQuery.setParameter("tillTime", tillTimeOfDay);
@@ -167,7 +167,7 @@ public class GetSimulationInputCommand extends GetProcessDefinitionCommand {
   private void queryTaskInstanceStatistics(JbpmContext jbpmContext, ProcessDefinition pd, BamSimulationProposal result) {
     Query nodeQuery = null;
     
-    nodeQuery = jbpmContext.getSession().getNamedQuery("Simulation.calculateAverageTimeForTaskInstances");
+    nodeQuery = jbpmContext.getSession().createNamedQuery("Simulation.calculateAverageTimeForTaskInstances");
 
     nodeQuery.setParameter("fromTime", fromTimeOfDay);
     nodeQuery.setParameter("tillTime", tillTimeOfDay);
@@ -195,7 +195,7 @@ public class GetSimulationInputCommand extends GetProcessDefinitionCommand {
 
   private void queryTransitionProbabilities(JbpmContext jbpmContext,
       long nodeId, ElementStatistics statistics) {
-    Query transQuery = jbpmContext.getSession().getNamedQuery("Simulation.calculateLeavingTransitionProbability");
+    Query transQuery = jbpmContext.getSession().createNamedQuery("Simulation.calculateLeavingTransitionProbability");
     transQuery.setParameter("nodeId", nodeId);
     transQuery.setParameter("fromTime", fromTimeOfDay);
     transQuery.setParameter("tillTime", tillTimeOfDay);

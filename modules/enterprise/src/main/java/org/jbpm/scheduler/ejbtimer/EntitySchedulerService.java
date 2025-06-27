@@ -52,7 +52,7 @@ public class EntitySchedulerService implements SchedulerService {
 	public void deleteTimer(Timer timer) {
     log.debug("deleting " + timer);
     try {
-      LocalTimerEntity timerEntity = timerEntityHome.findByPrimaryKey(new Long(timer.getId()));
+      LocalTimerEntity timerEntity = timerEntityHome.findByPrimaryKey(Long.valueOf(timer.getId()));
       timerEntity.cancelTimer(timer);
     }
     catch (FinderException e) {
@@ -63,7 +63,7 @@ public class EntitySchedulerService implements SchedulerService {
 
   public void deleteTimersByName(String timerName, Token token) {
 		try {
-		  Collection timerEntities = timerEntityHome.findByNameAndTokenId(timerName, new Long(token.getId()));
+		  Collection timerEntities = timerEntityHome.findByNameAndTokenId(timerName, Long.valueOf(token.getId()));
 			log.debug("found " + timerEntities.size() + " timer entities by name '" + timerName +  "' for " + token);
 			for (Iterator i = timerEntities.iterator(); i.hasNext();) {
 				LocalTimerEntity timerEntity = (LocalTimerEntity) i.next();
@@ -78,7 +78,7 @@ public class EntitySchedulerService implements SchedulerService {
 
 	public void deleteTimersByProcessInstance(ProcessInstance processInstance) {
 		try {
-			Collection timerEntities = timerEntityHome.findByProcessInstanceId(new Long(processInstance.getId()));
+			Collection timerEntities = timerEntityHome.findByProcessInstanceId(Long.valueOf(processInstance.getId()));
 			log.debug("found " + timerEntities.size() + " timer entities for " + processInstance);
 			for (Iterator i = timerEntities.iterator(); i.hasNext();) {
 				LocalTimerEntity timerEntity = (LocalTimerEntity) i.next();

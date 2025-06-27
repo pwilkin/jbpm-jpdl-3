@@ -69,7 +69,7 @@ public class BusinessFigure {
     Number result = null;
     if (implementationClass!=null) {
       try {
-        BusinessFigureCalculator calc = (BusinessFigureCalculator) implementationClass.newInstance();
+        BusinessFigureCalculator calc = (BusinessFigureCalculator) implementationClass.getDeclaredConstructor().newInstance();
         result = calc.calculate(executionContext);
       }
       catch (Exception ex) {

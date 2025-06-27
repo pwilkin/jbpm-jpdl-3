@@ -254,7 +254,7 @@ public class ProcessInstanceServiceImpl extends AbstractService implements Proce
       try
       {
         ClassLoader ctxLoader = Thread.currentThread().getContextClassLoader();
-        itor = (NodeInterceptor)ctxLoader.loadClass(className).newInstance();
+        itor = (NodeInterceptor)ctxLoader.loadClass(className).getDeclaredConstructor().newInstance();
       }
       catch (Exception ex)
       {
@@ -270,6 +270,6 @@ public class ProcessInstanceServiceImpl extends AbstractService implements Proce
     if (id == null)
       throw new IllegalStateException("Cannot obtain id property from: " + key);
 
-    return new Long(id);
+    return Long.valueOf(id);
   }
 }

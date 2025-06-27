@@ -225,7 +225,7 @@ public class JbpmSimulationScenario {
   public void addDataSource(String name, String className) {
     ProcessDataSource src = null;
     try {
-      src = (ProcessDataSource) Class.forName(className).newInstance();
+      src = (ProcessDataSource) Class.forName(className).getDeclaredConstructor().newInstance();
     }
     catch (Throwable ex) {
       throw new ExperimentConfigurationException("Couldn't initialize data source '" + name + "' of type '" + className + "'", ex);
@@ -245,7 +245,7 @@ public class JbpmSimulationScenario {
   public void addDataFilter(String name, String className) {
     ProcessDataFilter filter = null;
     try {
-      filter = (ProcessDataFilter) Class.forName(className).newInstance();
+      filter = (ProcessDataFilter) Class.forName(className).getDeclaredConstructor().newInstance();
     }
     catch (Throwable ex) {
       throw new ExperimentConfigurationException("Couldn't initialize data filter '" + name + "' of type '" + className + "'", ex);
