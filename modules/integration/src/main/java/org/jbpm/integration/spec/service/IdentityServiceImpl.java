@@ -63,7 +63,9 @@ public class IdentityServiceImpl extends AbstractService implements IdentityServ
     IdentitySession identSession = getIdentitySession();
     try
     {
-      actors.addAll(identSession.getUsers());
+      for (User user : identSession.getUsers()) {
+        actors.add(user.getName());
+      }
     }
     catch (RuntimeException rte)
     {

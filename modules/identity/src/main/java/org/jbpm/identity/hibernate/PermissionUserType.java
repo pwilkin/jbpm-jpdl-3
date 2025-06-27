@@ -30,21 +30,38 @@ import java.sql.SQLException;
 
 import org.hibernate.type.StandardBasicTypes;
 import org.hibernate.HibernateException;
-import org.hibernate.engine.SessionImplementor;
-import org.hibernate.type.Type;
+
+
 import org.hibernate.usertype.CompositeUserType;
 
 public class PermissionUserType implements CompositeUserType {
+
+  @Override
+  public Object instantiate(org.hibernate.metamodel.spi.ValueAccess valueAccess, org.hibernate.engine.spi.SessionFactoryImplementor sessionFactory) {
+    return new PermissionEmbeddable();
+  }
+
+  
+
+  @Override
+  public Class<?> embeddable() {
+    return PermissionEmbeddable.class;
+  }
+
+  public static class PermissionEmbeddable implements Serializable {
+    public String className;
+    public String name;
+    public String actions;
+  }
 
   private static final String[] PROPERTY_NAMES = new String[]{"class", "name", "actions"};
   public String[] getPropertyNames() {
     return PROPERTY_NAMES;
   }
 
-  private static final Type[] PROPERTY_TYPES = new Type[]{StandardBasicTypes.STRING, StandardBasicTypes.STRING, StandardBasicTypes.STRING};
-  public Type[] getPropertyTypes() {
-    return PROPERTY_TYPES;
-  }
+  
+
+  
 
   public Object getPropertyValue(Object component, int property) throws HibernateException {
     Permission permission = (Permission) component;
@@ -76,29 +93,27 @@ public class PermissionUserType implements CompositeUserType {
   }
   
   private static final Class[] NAME_ACTIOS_CONSTRUCTOR_PARAMETER_TYPES = new Class[]{String.class, String.class};
-  public Object nullSafeGet(ResultSet resultSet, String[] names, SessionImplementor session, Object owner) throws HibernateException, SQLException {
-    Object permission = null;
-    String className = resultSet.getString(names[0]);
-    String name = resultSet.getString(names[1]);
-    String actions = resultSet.getString(names[2]);
+  public Object nullSafeGet(ResultSet resultSet, String[] names, Object owner) throws SQLException {
+    PermissionEmbeddable embeddable = new PermissionEmbeddable();
+    embeddable.className = resultSet.getString(names[0]);
+    embeddable.name = resultSet.getString(names[1]);
+    embeddable.actions = resultSet.getString(names[2]);
     
     try {
       // TODO optimize performance by caching the constructors
-      Class permissionClass = PermissionUserType.class.getClassLoader().loadClass(className);
+      Class permissionClass = PermissionUserType.class.getClassLoader().loadClass(embeddable.className);
       Constructor constructor = permissionClass.getDeclaredConstructor(NAME_ACTIOS_CONSTRUCTOR_PARAMETER_TYPES);
-      permission = constructor.newInstance(new Object[]{name, actions});
+      return constructor.newInstance(new Object[]{embeddable.name, embeddable.actions});
     } catch (Exception e) {
-      throw new HibernateException("couldn't create permission from database record ["+className+"|"+name+"|"+actions+"].  Does the permission class have a (String name,String actions) constructor ?", e);
+      throw new HibernateException("couldn't create permission from database record ["+embeddable.className+"|"+embeddable.name+"|"+embeddable.actions+"].  Does the permission class have a (String name,String actions) constructor ?", e);
     }
-    
-    return permission;
   }
 
-  public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index, SessionImplementor session) throws HibernateException, SQLException {
+  public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index) throws HibernateException, SQLException {
     Permission permission = (Permission) value;
-    preparedStatement.setParameter(index, permission.getClass().getName());
-    preparedStatement.setParameter(index+1, permission.getName());
-    preparedStatement.setParameter(index+2, permission.getActions());
+    preparedStatement.setString(index, permission.getClass().getName());
+    preparedStatement.setString(index+1, permission.getName());
+    preparedStatement.setString(index+2, permission.getActions());
   }
 
   public Object deepCopy(Object permission) throws HibernateException {
@@ -109,15 +124,27 @@ public class PermissionUserType implements CompositeUserType {
     return false;
   }
 
-  public Serializable disassemble(Object value, SessionImplementor session) throws HibernateException {
-    return (Serializable) value;
+  public Serializable disassemble(Object value) throws HibernateException {
+    Permission permission = (Permission) value;
+    PermissionEmbeddable embeddable = new PermissionEmbeddable();
+    embeddable.className = permission.getClass().getName();
+    embeddable.name = permission.getName();
+    embeddable.actions = permission.getActions();
+    return embeddable;
   }
 
-  public Object assemble(Serializable cached, SessionImplementor session, Object owner) throws HibernateException {
-    return cached;
+  public Object assemble(Serializable cached, Object owner) throws HibernateException {
+    PermissionEmbeddable embeddable = (PermissionEmbeddable) cached;
+    try {
+      Class permissionClass = PermissionUserType.class.getClassLoader().loadClass(embeddable.className);
+      Constructor constructor = permissionClass.getDeclaredConstructor(NAME_ACTIOS_CONSTRUCTOR_PARAMETER_TYPES);
+      return constructor.newInstance(new Object[]{embeddable.name, embeddable.actions});
+    } catch (Exception e) {
+      throw new HibernateException("couldn't create permission from cached record ["+embeddable.className+"|"+embeddable.name+"|"+embeddable.actions+"].  Does the permission class have a (String name,String actions) constructor ?", e);
+    }
   }
 
-  public Object replace(Object original, Object target, SessionImplementor session, Object owner) throws HibernateException {
-    return original;
+  public Object replace(Object original, Object target, Object owner) throws HibernateException {
+    return deepCopy(original);
   }
 }

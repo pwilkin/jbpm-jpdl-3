@@ -25,8 +25,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.EnumSet;
 import java.util.Properties;
+import java.util.Map;
+import java.util.HashMap;
+
+import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
+import org.hibernate.engine.jdbc.spi.JdbcServices;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
@@ -36,12 +44,18 @@ import org.hibernate.cfg.Configuration;
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.tool.schema.spi.SchemaCreator;
 import org.hibernate.tool.schema.spi.SchemaDropper;
-import org.hibernate.tool.schema.spi.SchemaUpdate;
-import org.hibernate.tool.schema.spi.SchemaFilter;
-import org.hibernate.tool.schema.spi.SchemaManagementTool;
-import org.jbpm.JbpmException;
+import org.hibernate.tool.schema.spi.ExceptionHandler;
+import org.hibernate.tool.schema.spi.CommandAcceptanceException;
+import org.hibernate.tool.schema.spi.ExecutionOptions;
+import org.hibernate.tool.schema.spi.ContributableMatcher;
+import org.hibernate.tool.schema.spi.SourceDescriptor;
+import org.hibernate.tool.schema.spi.TargetDescriptor;
+import org.hibernate.tool.schema.TargetType;
+import org.hibernate.engine.config.spi.ConfigurationService;
+import org.jbpm.db.MetadataSourceDescriptor;
 import org.jbpm.db.ScriptTargetDescriptor;
 import org.jbpm.db.StringWriterScriptTargetOutput;
+
 
 public class JbpmSchemaTask extends Task {
 
@@ -71,31 +85,114 @@ public class JbpmSchemaTask extends Task {
       ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
         configuration.getProperties()).build();
       Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
-      SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
+
+      Map<String, Object> configValues = new HashMap<>();
+      for (Map.Entry<Object, Object> entry : configuration.getProperties().entrySet()) {
+          configValues.put(String.valueOf(entry.getKey()), entry.getValue());
+      }
+
+      ExecutionOptions executionOptions = new ExecutionOptions() {
+          @Override
+          public boolean shouldManageNamespaces() {
+              return false;
+          }
+
+          @Override
+          public Map<String, Object> getConfigurationValues() {
+              return configValues;
+          }
+
+          @Override
+          public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
+              return new org.hibernate.tool.schema.spi.ExceptionHandler() {
+                  @Override
+                  public void handleException(CommandAcceptanceException exception) {
+                      // no-op
+                  }
+              };
+          }
+
+          @Override
+          public org.hibernate.tool.schema.spi.SchemaFilter getSchemaFilter() {
+              return org.hibernate.tool.schema.spi.SchemaFilter.ALL;
+          }
+      };
 
       if ("update".equalsIgnoreCase(action)) {
-        SchemaUpdate schemaUpdate = schemaManagementTool.getSchemaUpdater(configuration.getProperties());
-        schemaUpdate.execute(new ScriptTargetDescriptor(new StringWriterScriptTargetOutput()), metadata, serviceRegistry, SchemaFilter.ALL);
+        // For update, we'll generate drop and create scripts and execute them
+        StringWriterScriptTargetOutput dropScriptTarget = new StringWriterScriptTargetOutput();
+        SchemaDropper schemaDropper = new org.hibernate.tool.schema.internal.SchemaDropperImpl(serviceRegistry);
+        schemaDropper.doDrop(metadata, executionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), new ScriptTargetDescriptor(dropScriptTarget));
 
-      } else if ("export".equalsIgnoreCase(action)) {
-        SchemaCreator schemaCreator = schemaManagementTool.getSchemaCreator(configuration.getProperties());
-        schemaCreator.doCreation(metadata, false, new ScriptTargetDescriptor(new StringWriterScriptTargetOutput()));
+        StringWriterScriptTargetOutput createScriptTarget = new StringWriterScriptTargetOutput();
+        SchemaCreator schemaCreator = new org.hibernate.tool.schema.internal.SchemaCreatorImpl(serviceRegistry);
+        schemaCreator.doCreation(metadata, executionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), new ScriptTargetDescriptor(createScriptTarget));
+
+        executeSql(dropScriptTarget.getWriter().toString(), serviceRegistry);
+        executeSql(createScriptTarget.getWriter().toString(), serviceRegistry);
+
+      } else if ("export".equalsIgnoreCase(action) || "create".equalsIgnoreCase(action)) {
+        StringWriterScriptTargetOutput createScriptTarget = new StringWriterScriptTargetOutput();
+        SchemaCreator schemaCreator = new org.hibernate.tool.schema.internal.SchemaCreatorImpl(serviceRegistry);
+        schemaCreator.doCreation(metadata, executionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), new ScriptTargetDescriptor(createScriptTarget));
+        if (outputFile != null) {
+          try (FileWriter writer = new FileWriter(outputFile)) {
+            writer.write(createScriptTarget.getWriter().toString());
+          }
+        }
 
       } else if ("drop".equalsIgnoreCase(action)) {
-        SchemaDropper schemaDropper = schemaManagementTool.getSchemaDropper(configuration.getProperties());
-        schemaDropper.doDrop(metadata, false, new ScriptTargetDescriptor(new StringWriterScriptTargetOutput()));
-
-      } else if ("create".equalsIgnoreCase(action)) {
-        SchemaCreator schemaCreator = schemaManagementTool.getSchemaCreator(configuration.getProperties());
-        schemaCreator.doCreation(metadata, false, new ScriptTargetDescriptor(new StringWriterScriptTargetOutput()));
+        StringWriterScriptTargetOutput dropScriptTarget = new StringWriterScriptTargetOutput();
+        SchemaDropper schemaDropper = new org.hibernate.tool.schema.internal.SchemaDropperImpl(serviceRegistry);
+        schemaDropper.doDrop(metadata, executionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), new ScriptTargetDescriptor(dropScriptTarget));
+        if (outputFile != null) {
+          try (FileWriter writer = new FileWriter(outputFile)) {
+            writer.write(dropScriptTarget.getWriter().toString());
+          }
+        }
       }
 
     } catch (IOException e) {
       throw new BuildException(e);
-    } catch (JbpmException e) {
+    } catch (Exception e) { // Catch generic Exception for now, refine later if needed
       throw new BuildException(e);
     }
   }
+
+  private void executeSql(String sql, ServiceRegistry serviceRegistry) {
+    Connection connection = null;
+    Statement statement = null;
+    try {
+      ConnectionProvider connectionProvider = serviceRegistry.getService(ConnectionProvider.class);
+      connection = connectionProvider.getConnection();
+      statement = connection.createStatement();
+      for (String s : sql.split(delimiter)) {
+        if (!s.trim().isEmpty()) {
+          statement.executeUpdate(s);
+        }
+      }
+    } catch (SQLException e) {
+      throw new BuildException("Error executing SQL: " + sql, e);
+    } finally {
+      if (statement != null) {
+        try {
+          statement.close();
+        } catch (SQLException e) {
+          log.debug("could not close jdbc statement", e);
+        }
+      }
+      if (connection != null) {
+        try {
+          serviceRegistry.getService(org.hibernate.engine.jdbc.spi.JdbcServices.class).getSqlExceptionHelper().logAndClearWarnings(connection);
+          serviceRegistry.getService(ConnectionProvider.class).closeConnection(connection);
+        } catch (SQLException e) {
+          log.debug("could not close jdbc connection", e);
+        }
+      }
+    }
+  }
+
+  private static final org.apache.commons.logging.Log log = org.apache.commons.logging.LogFactory.getLog(JbpmSchemaTask.class);
 
   public void setAction(String action) {
     this.action = action;

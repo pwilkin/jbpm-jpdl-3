@@ -21,11 +21,17 @@
  */
 package org.jbpm.db.hibernate;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.EnumSet;
-import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import org.hibernate.tool.schema.spi.ExecutionOptions;
+import org.hibernate.tool.schema.spi.ContributableMatcher;
+import org.hibernate.tool.schema.spi.SourceDescriptor;
+import org.hibernate.tool.schema.spi.TargetDescriptor;
+import org.hibernate.tool.schema.spi.ExceptionHandler;
+import org.hibernate.tool.schema.spi.CommandAcceptanceException;
+import org.hibernate.tool.schema.spi.SchemaFilter;
+import org.jbpm.db.MetadataSourceDescriptor;
 
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
@@ -43,42 +49,102 @@ public class HibernateHelper {
 
   public static String[] getCreateSchemaSql(Configuration configuration) {
     try {
-      File tempFile = File.createTempFile("jbpm-create-", ".sql");
-      tempFile.deleteOnExit();
-
       ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
         configuration.getProperties()).build();
       Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
       SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
-      SchemaCreator schemaCreator = schemaManagementTool.getSchemaCreator(configuration.getProperties());
+
+      Map<String, Object> configValues = new HashMap<>();
+      for (Map.Entry<Object, Object> entry : configuration.getProperties().entrySet()) {
+          configValues.put((String) entry.getKey(), entry.getValue());
+      }
+
+      SchemaCreator schemaCreator = schemaManagementTool.getSchemaCreator(configValues);
 
       StringWriterScriptTargetOutput scriptTargetOutput = new StringWriterScriptTargetOutput();
-      schemaCreator.doCreation(metadata, false, new ScriptTargetDescriptor(scriptTargetOutput));
+      
+      ExecutionOptions executionOptions = new ExecutionOptions() {
+          @Override
+          public boolean shouldManageNamespaces() {
+              return false;
+          }
 
-      List<String> lines = Files.readAllLines(tempFile.toPath());
-      return lines.toArray(new String[0]);
-    } catch (IOException e) {
+          @Override
+          public Map<String, Object> getConfigurationValues() {
+              return configValues;
+          }
+
+          @Override
+          public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
+              return new org.hibernate.tool.schema.spi.ExceptionHandler() {
+                  @Override
+                  public void handleException(org.hibernate.tool.schema.spi.CommandAcceptanceException exception) {
+                      // no-op
+                  }
+              };
+          }
+
+          @Override
+          public org.hibernate.tool.schema.spi.SchemaFilter getSchemaFilter() {
+              return org.hibernate.tool.schema.spi.SchemaFilter.ALL;
+          }
+      };
+      
+      schemaCreator.doCreation(metadata, executionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), new ScriptTargetDescriptor(scriptTargetOutput));
+
+      return new String[]{scriptTargetOutput.getWriter().toString()};
+    } catch (Exception e) {
       throw new JbpmException("couldn't generate create script", e);
     }
   }
 
   public static String[] getDropSchemaSql(Configuration configuration) {
     try {
-      File tempFile = File.createTempFile("jbpm-drop-", ".sql");
-      tempFile.deleteOnExit();
-
       ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
         configuration.getProperties()).build();
       Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
       SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
-      SchemaDropper schemaDropper = schemaManagementTool.getSchemaDropper(configuration.getProperties());
+
+      Map<String, Object> configValues = new HashMap<>();
+      for (Map.Entry<Object, Object> entry : configuration.getProperties().entrySet()) {
+          configValues.put((String) entry.getKey(), entry.getValue());
+      }
+
+      SchemaDropper schemaDropper = schemaManagementTool.getSchemaDropper(configValues);
 
       StringWriterScriptTargetOutput scriptTargetOutput = new StringWriterScriptTargetOutput();
-      schemaDropper.doDrop(metadata, false, new ScriptTargetDescriptor(scriptTargetOutput));
 
-      List<String> lines = Files.readAllLines(tempFile.toPath());
-      return lines.toArray(new String[0]);
-    } catch (IOException e) {
+      ExecutionOptions executionOptions = new ExecutionOptions() {
+          @Override
+          public boolean shouldManageNamespaces() {
+              return false;
+          }
+
+          @Override
+          public Map<String, Object> getConfigurationValues() {
+              return configValues;
+          }
+
+          @Override
+          public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
+              return new org.hibernate.tool.schema.spi.ExceptionHandler() {
+                  @Override
+                  public void handleException(org.hibernate.tool.schema.spi.CommandAcceptanceException exception) {
+                      // no-op
+                  }
+              };
+          }
+
+          @Override
+          public org.hibernate.tool.schema.spi.SchemaFilter getSchemaFilter() {
+              return org.hibernate.tool.schema.spi.SchemaFilter.ALL;
+          }
+      };
+
+      schemaDropper.doDrop(metadata, executionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), new ScriptTargetDescriptor(scriptTargetOutput));
+
+      return new String[]{scriptTargetOutput.getWriter().toString()};
+    } catch (Exception e) {
       throw new JbpmException("couldn't generate drop script", e);
     }
   }

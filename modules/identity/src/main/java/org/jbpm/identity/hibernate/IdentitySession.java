@@ -26,7 +26,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.HibernateException;
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.jbpm.db.JbpmSession;
@@ -64,7 +64,7 @@ public class IdentitySession implements IdentityService, ExpressionSession
   public Object verify(String userName, String pwd)
   {
     Object userId = null;
-    Query query = session.createQuery("select user.id " + "from org.jbpm.identity.User as user where user.name = :userName and user.password = :password");
+    org.hibernate.query.Query<Long> query = session.createQuery("select user.id " + "from org.jbpm.identity.User as user where user.name = :userName and user.password = :password", Long.class);
     query.setParameter("userName", userName);
     query.setParameter("password", pwd);
     userId = (Long)query.uniqueResult();
@@ -208,7 +208,7 @@ public class IdentitySession implements IdentityService, ExpressionSession
   public User getUserByName(String userName)
   {
     User user = null;
-    Query query = session.createQuery("select u " + "from org.jbpm.identity.User as u " + "where u.name = :userName");
+    org.hibernate.query.Query<User> query = session.createQuery("select u " + "from org.jbpm.identity.User as u " + "where u.name = :userName", User.class);
     query.setParameter("userName", userName);
     List users = query.list();
     if ((users != null) && (users.size() > 0))
@@ -221,7 +221,7 @@ public class IdentitySession implements IdentityService, ExpressionSession
   public Group getGroupByName(String groupName)
   {
     Group group = null;
-    Query query = session.createQuery("select g " + "from org.jbpm.identity.Group as g " + "where g.name = :groupName");
+    org.hibernate.query.Query<Group> query = session.createQuery("select g " + "from org.jbpm.identity.Group as g " + "where g.name = :groupName", Group.class);
     query.setParameter("groupName", groupName);
     List groups = query.list();
     if ((groups != null) && (groups.size() > 0))
@@ -231,16 +231,16 @@ public class IdentitySession implements IdentityService, ExpressionSession
     return group;
   }
 
-  public List getUsers()
+  public List<User> getUsers()
   {
-    Query query = session.createQuery("select u " + "from org.jbpm.identity.User as u");
+    org.hibernate.query.Query<User> query = session.createQuery("select u " + "from org.jbpm.identity.User as u", User.class);
     return query.list();
   }
 
-  public List getGroupNamesByUserAndGroupType(String userName, String groupType)
+  public List<String> getGroupNamesByUserAndGroupType(String userName, String groupType)
   {
-    Query query = session.createQuery("select membership.group.name from org.jbpm.identity.Membership as membership where membership.user.name = :userName "
-        + "  and membership.group.type = :groupType");
+    org.hibernate.query.Query<String> query = session.createQuery("select membership.group.name from org.jbpm.identity.Membership as membership where membership.user.name = :userName "
+        + "  and membership.group.type = :groupType", String.class);
     query.setParameter("userName", userName);
     query.setParameter("groupType", groupType);
     return query.list();
@@ -249,7 +249,7 @@ public class IdentitySession implements IdentityService, ExpressionSession
   public User getUserByGroupAndRole(String groupName, String role)
   {
     User user = null;
-    Query query = session.createQuery("select m.user " + "from org.jbpm.identity.Membership as m where m.group.name = :groupName and m.role = :role");
+    org.hibernate.query.Query<User> query = session.createQuery("select m.user " + "from org.jbpm.identity.Membership as m where m.group.name = :groupName and m.role = :role", User.class);
     query.setParameter("groupName", groupName);
     query.setParameter("role", role);
     user = (User)query.uniqueResult();

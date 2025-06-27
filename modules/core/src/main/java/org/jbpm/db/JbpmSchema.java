@@ -32,7 +32,7 @@ import org.hibernate.tool.schema.SourceType;
 import org.hibernate.tool.schema.spi.ExecutionOptions;
 import org.hibernate.tool.schema.spi.ExceptionHandler;
 import org.hibernate.tool.schema.spi.CommandAcceptanceException;
-import org.hibernate.tool.hbm2ddl.SchemaExport;
+
 import org.hibernate.tool.schema.spi.SchemaCreator;
 import org.hibernate.tool.schema.spi.SchemaDropper;
 import org.hibernate.tool.schema.spi.SchemaFilter;
@@ -43,6 +43,7 @@ import org.hibernate.tool.schema.internal.exec.ScriptTargetOutputToWriter;
 import org.hibernate.tool.schema.spi.ContributableMatcher;
 import org.hibernate.tool.schema.spi.SourceDescriptor;
 import org.hibernate.tool.schema.spi.TargetDescriptor;
+import org.jbpm.db.MetadataSourceDescriptor;
 import org.hibernate.tool.schema.TargetType;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -117,10 +118,6 @@ public class JbpmSchema implements Serializable {
       configurationProperties.put("jakarta.persistence.schema-generation.scripts.action", "create");
       configurationProperties.put("jakarta.persistence.schema-generation.scripts.create-target", createScriptTarget.getWriter());
 
-      StandardServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
-          .applySettings(configurationProperties)
-          .build();
-
       try {
           SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
           SchemaCreator schemaCreator = schemaManagementTool.getSchemaCreator(configurationProperties);
@@ -139,7 +136,7 @@ public class JbpmSchema implements Serializable {
               public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
                   return new org.hibernate.tool.schema.spi.ExceptionHandler() {
                       @Override
-                      public void handleException(Exception exception) {
+                      public void handleException(CommandAcceptanceException exception) {
                           // no-op
                       }
                   };
@@ -153,8 +150,6 @@ public class JbpmSchema implements Serializable {
           schemaCreator.doCreation(metadata, executionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), createTargetDescriptor);
       } catch (Exception e) {
           throw new JbpmException("couldn't create schema", e);
-      } finally {
-          StandardServiceRegistryBuilder.destroy(serviceRegistry);
       }
       createSql = new String[]{createScriptTarget.getWriter().toString()};
     }
@@ -168,10 +163,6 @@ public class JbpmSchema implements Serializable {
       Map<String, Object> configurationProperties = new HashMap<>();
       configurationProperties.put("jakarta.persistence.schema-generation.scripts.action", "drop");
       configurationProperties.put("jakarta.persistence.schema-generation.scripts.drop-target", dropScriptTarget.getWriter());
-
-      StandardServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
-          .applySettings(configurationProperties)
-          .build();
 
       try {
           SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
@@ -191,7 +182,7 @@ public class JbpmSchema implements Serializable {
               public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
                   return new org.hibernate.tool.schema.spi.ExceptionHandler() {
                       @Override
-                      public void handleException(Exception exception) {
+                      public void handleException(CommandAcceptanceException exception) {
                           // no-op
                       }
                   };
@@ -205,8 +196,6 @@ public class JbpmSchema implements Serializable {
           schemaDropper.doDrop(metadata, executionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), dropTargetDescriptor);
       } catch (Exception e) {
           throw new JbpmException("couldn't drop schema", e);
-      } finally {
-          StandardServiceRegistryBuilder.destroy(serviceRegistry);
       }
       dropSql = new String[]{dropScriptTarget.getWriter().toString()};
     }
@@ -224,12 +213,8 @@ public class JbpmSchema implements Serializable {
       dropConfigurationProperties.put("jakarta.persistence.schema-generation.scripts.action", "drop");
       dropConfigurationProperties.put("jakarta.persistence.schema-generation.scripts.drop-target", dropScriptTarget.getWriter());
 
-      StandardServiceRegistry dropServiceRegistry = new StandardServiceRegistryBuilder()
-          .applySettings(dropConfigurationProperties)
-          .build();
-
       try {
-          SchemaManagementTool dropSchemaManagementTool = dropServiceRegistry.getService(SchemaManagementTool.class);
+          SchemaManagementTool dropSchemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
           SchemaDropper schemaDropper = dropSchemaManagementTool.getSchemaDropper(dropConfigurationProperties);
           ExecutionOptions dropExecutionOptions = new ExecutionOptions() {
               @Override
@@ -239,14 +224,14 @@ public class JbpmSchema implements Serializable {
 
               @Override
               public Map<String, Object> getConfigurationValues() {
-                  return dropServiceRegistry.getService(ConfigurationService.class).getSettings();
+                  return serviceRegistry.getService(ConfigurationService.class).getSettings();
               }
 
               @Override
               public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
                   return new org.hibernate.tool.schema.spi.ExceptionHandler() {
                       @Override
-                      public void handleException(Exception exception) {
+                      public void handleException(CommandAcceptanceException exception) {
                           // no-op
                       }
                   };
@@ -260,8 +245,6 @@ public class JbpmSchema implements Serializable {
           schemaDropper.doDrop(metadata, dropExecutionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), dropTargetDescriptor);
       } catch (Exception e) {
           throw new JbpmException("couldn't drop schema", e);
-      } finally {
-          StandardServiceRegistryBuilder.destroy(dropServiceRegistry);
       }
 
       final StringWriterScriptTargetOutput createScriptTarget = new StringWriterScriptTargetOutput();
@@ -270,12 +253,8 @@ public class JbpmSchema implements Serializable {
       createConfigurationProperties.put("jakarta.persistence.schema-generation.scripts.action", "create");
       createConfigurationProperties.put("jakarta.persistence.schema-generation.scripts.create-target", createScriptTarget.getWriter());
 
-      StandardServiceRegistry createServiceRegistry = new StandardServiceRegistryBuilder()
-          .applySettings(createConfigurationProperties)
-          .build();
-
       try {
-          SchemaManagementTool createSchemaManagementTool = createServiceRegistry.getService(SchemaManagementTool.class);
+          SchemaManagementTool createSchemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
           SchemaCreator schemaCreator = createSchemaManagementTool.getSchemaCreator(createConfigurationProperties);
           ExecutionOptions createExecutionOptions = new ExecutionOptions() {
               @Override
@@ -285,14 +264,14 @@ public class JbpmSchema implements Serializable {
 
               @Override
               public Map<String, Object> getConfigurationValues() {
-                  return createServiceRegistry.getService(ConfigurationService.class).getSettings();
+                  return serviceRegistry.getService(ConfigurationService.class).getSettings();
               }
 
               @Override
               public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
                   return new org.hibernate.tool.schema.spi.ExceptionHandler() {
                       @Override
-                      public void handleException(Exception exception) {
+                      public void handleException(CommandAcceptanceException exception) {
                           // no-op
                       }
                   };
@@ -306,8 +285,6 @@ public class JbpmSchema implements Serializable {
           schemaCreator.doCreation(metadata, createExecutionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), createTargetDescriptor);
       } catch (Exception e) {
           throw new JbpmException("couldn't create schema", e);
-      } finally {
-          StandardServiceRegistryBuilder.destroy(createServiceRegistry);
       }
 
       List<String> deleteSql = new ArrayList<>();
@@ -530,7 +507,7 @@ public class JbpmSchema implements Serializable {
 
   public Properties getProperties() {
     Properties properties = new Properties();
-    properties.putAll(serviceRegistry.getService(ConfigurationService.class).getSettings());
+    serviceRegistry.getService(ConfigurationService.class).getSettings().forEach((key, value) -> properties.put(key, value));
     return properties;
   }
 

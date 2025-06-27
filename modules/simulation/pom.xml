@@ -51,12 +51,16 @@
     <dependency>
       <groupId>commons-digester</groupId>
       <artifactId>commons-digester</artifactId>
-      <version>1.6</version>
+      <version>2.1</version>
     </dependency>
     <dependency>
       <groupId>jasperreports</groupId>
       <artifactId>jasperreports</artifactId>
       <exclusions>
+        <exclusion>
+          <groupId>commons-collections</groupId>
+          <artifactId>commons-collections</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>commons-digester</groupId>
           <artifactId>commons-digester</artifactId>
@@ -84,6 +88,13 @@
   <!-- Plugins -->
   <build>
     <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>

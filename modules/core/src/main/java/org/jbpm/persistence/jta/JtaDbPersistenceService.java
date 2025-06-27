@@ -93,7 +93,7 @@ public class JtaDbPersistenceService extends DbPersistenceService {
   void beginUserTransaction() {
     try {
       log.debug("begin user transaction");
-      userTransaction = persistenceServiceFactory.getUserTransaction();
+      userTransaction = ((JtaDbPersistenceServiceFactory)persistenceServiceFactory).getUserTransaction();
       userTransaction.begin();
     } catch (Exception e) {
       throw new JbpmException("couldn't begin user transaction", e);

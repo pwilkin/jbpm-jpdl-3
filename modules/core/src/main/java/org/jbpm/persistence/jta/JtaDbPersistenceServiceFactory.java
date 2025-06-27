@@ -38,8 +38,7 @@ public class JtaDbPersistenceServiceFactory extends org.jbpm.persistence.db.DbPe
 
   private static final long serialVersionUID = 1L;
 
-  protected JbpmConfiguration jbpmConfiguration = null;
-  protected SessionFactory sessionFactory = null;
+  
   protected boolean isCurrentSessionEnabled = true;
   protected String userTransactionName = "java:comp/UserTransaction";
 

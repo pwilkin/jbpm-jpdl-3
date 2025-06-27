@@ -175,10 +175,10 @@ public class DbPersistenceService implements Service, PersistenceService {
 
   public Connection getConnection(boolean resolveSession) {
     if (connection==null) {
-      if (persistenceServiceFactory.getJbpmConfiguration().hasDataSource()) { 
+      if (persistenceServiceFactory.getDataSource() != null) { 
         try {
           log.debug("fetching jdbc connection from datasource");
-          connection = persistenceServiceFactory.getJbpmConfiguration().getDataSource().getConnection();
+          connection = persistenceServiceFactory.getDataSource().getConnection();
           mustConnectionBeClosed = true;
         } catch (Exception e) {
           // NOTE that Error's are not caught because that might halt the JVM and mask the original Error.
@@ -447,9 +447,7 @@ public class DbPersistenceService implements Service, PersistenceService {
   public void setContextSession(ContextSession contextSession) {
     this.contextSession = contextSession;
   }
-  public void setDataSource(DataSource dataSource) {
-    this.persistenceServiceFactory.setDataSource(dataSource);
-  }
+  
   public void setGraphSession(GraphSession graphSession) {
     this.graphSession = graphSession;
   }

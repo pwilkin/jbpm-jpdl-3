@@ -122,11 +122,11 @@
               <goal>run</goal>
             </goals>
             <configuration>
-              <tasks>
+              <target>
                 <property name="tests.output.dir" value="${project.build.directory}" />
                 <property name="tests.resources.dir" value="${basedir}/src/test/resources" />
                 <ant antfile="scripts/antrun-test-jars.xml" target="build-test-jars" />
-              </tasks>
+              </target>
             </configuration>
           </execution>
         </executions>
@@ -152,7 +152,7 @@
             <id>assembly-test-dependencies</id>
             <phase>generate-test-resources</phase>
             <goals>
-              <goal>directory-single</goal>
+              <goal>single</goal>
             </goals>
             <configuration>
               <finalName>test-dependencies</finalName>
@@ -168,6 +168,8 @@
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
           <showDeprecation>false</showDeprecation>
         </configuration>
       </plugin>

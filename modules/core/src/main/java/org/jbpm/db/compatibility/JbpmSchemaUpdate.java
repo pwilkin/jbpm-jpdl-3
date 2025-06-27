@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,12 +22,25 @@ import org.hibernate.service.ServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.dialect.Dialect;
-import org.hibernate.tool.schema.spi.SchemaUpdate;
+
 import org.hibernate.tool.schema.spi.ExecutionOptions;
 import org.hibernate.tool.schema.spi.ContributableMatcher;
 import org.hibernate.tool.schema.spi.SourceDescriptor;
 import org.hibernate.tool.schema.spi.TargetDescriptor;
+import org.hibernate.tool.schema.spi.SchemaManagementTool;
+import org.hibernate.tool.schema.TargetType;
+import org.hibernate.engine.config.spi.ConfigurationService;
 import java.util.Collections;
+import java.util.EnumSet;
+import org.hibernate.tool.schema.internal.exec.ScriptTargetOutputToWriter;
+import org.hibernate.tool.schema.spi.SchemaCreator;
+import org.hibernate.tool.schema.spi.SchemaDropper;
+import org.jbpm.db.MetadataSourceDescriptor;
+import org.jbpm.db.ScriptTargetDescriptor;
+import org.jbpm.db.StringWriterScriptTargetOutput;
+import org.hibernate.tool.schema.spi.ExceptionHandler;
+import org.hibernate.tool.schema.spi.CommandAcceptanceException;
+import org.hibernate.tool.schema.spi.SchemaFilter;
 
 /**
  * This is a modified version of the hibernate tools schema update.
@@ -84,7 +99,7 @@ public class JbpmSchemaUpdate {
 						out = new File(args[i].substring(9));
 					}
 				}
-				else {
+					else {
 					cfg.addFile(args[i]);
 				}
 
@@ -116,55 +131,124 @@ public class JbpmSchemaUpdate {
 
 		exceptions.clear();
 
-		SchemaUpdate schemaUpdate = new SchemaUpdate();
+		SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
+
+		// Generate drop SQL
+		final StringWriterScriptTargetOutput dropScriptTarget = new StringWriterScriptTargetOutput();
+		final TargetDescriptor dropTargetDescriptor = new ScriptTargetDescriptor(dropScriptTarget);
+		Map<String, Object> dropConfigurationProperties = new HashMap<>();
+		dropConfigurationProperties.put("jakarta.persistence.schema-generation.scripts.action", "drop");
+		dropConfigurationProperties.put("jakarta.persistence.schema-generation.scripts.drop-target", dropScriptTarget.getWriter());
+
+		SchemaDropper schemaDropper = schemaManagementTool.getSchemaDropper(dropConfigurationProperties);
+		ExecutionOptions dropExecutionOptions = new ExecutionOptions() {
+			@Override
+			public boolean shouldManageNamespaces() {
+				return false;
+			}
+
+			@Override
+			public Map<String, Object> getConfigurationValues() {
+				return serviceRegistry.getService(ConfigurationService.class).getSettings();
+			}
+
+			@Override
+			public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
+				return new org.hibernate.tool.schema.spi.ExceptionHandler() {
+					@Override
+					public void handleException(CommandAcceptanceException exception) {
+						// no-op
+					}
+				};
+			}
+
+			@Override
+			public org.hibernate.tool.schema.spi.SchemaFilter getSchemaFilter() {
+				return org.hibernate.tool.schema.spi.SchemaFilter.ALL;
+			}
+		};
+		schemaDropper.doDrop(metadata, dropExecutionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), dropTargetDescriptor);
+		String[] dropSql = new String[]{dropScriptTarget.getWriter().toString()};
+
+		// Generate create SQL
+		final StringWriterScriptTargetOutput createScriptTarget = new StringWriterScriptTargetOutput();
+		final TargetDescriptor createTargetDescriptor = new ScriptTargetDescriptor(createScriptTarget);
+		Map<String, Object> createConfigurationProperties = new HashMap<>();
+		createConfigurationProperties.put("jakarta.persistence.schema-generation.scripts.action", "create");
+		createConfigurationProperties.put("jakarta.persistence.schema-generation.scripts.create-target", createScriptTarget.getWriter());
+
+		SchemaCreator schemaCreator = schemaManagementTool.getSchemaCreator(createConfigurationProperties);
+		ExecutionOptions createExecutionOptions = new ExecutionOptions() {
+			@Override
+			public boolean shouldManageNamespaces() {
+				return false;
+			}
+
+			@Override
+			public Map<String, Object> getConfigurationValues() {
+				return serviceRegistry.getService(ConfigurationService.class).getSettings();
+			}
+
+			@Override
+			public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
+				return new org.hibernate.tool.schema.spi.ExceptionHandler() {
+					@Override
+					public void handleException(CommandAcceptanceException exception) {
+						// no-op
+					}
+				};
+			}
+
+			@Override
+			public org.hibernate.tool.schema.spi.SchemaFilter getSchemaFilter() {
+				return org.hibernate.tool.schema.spi.SchemaFilter.ALL;
+			}
+		};
+		schemaCreator.doCreation(metadata, createExecutionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), createTargetDescriptor);
+		String[] createSql = new String[]{createScriptTarget.getWriter().toString()};
 
 		if (doUpdate) {
-			schemaUpdate.execute(new TargetDescriptor() {
-				@Override
-				public void accept(String command) {
-					if (script) {
-						log.info(command);
-					}
-					Connection connection = null;
-					Statement statement = null;
+			Connection connection = null;
+			Statement statement = null;
+			try {
+				connection = connectionProvider.getConnection();
+				statement = connection.createStatement();
+				for (String sql : dropSql) {
+					if (script) log.info(sql);
+					statement.executeUpdate(sql);
+				}
+				for (String sql : createSql) {
+					if (script) log.info(sql);
+					statement.executeUpdate(sql);
+				}
+			} catch (SQLException e) {
+				exceptions.add(e);
+			} finally {
+				if (statement != null) {
 					try {
-						connection = connectionProvider.getConnection();
-						statement = connection.createStatement();
-						statement.executeUpdate(command);
+						statement.close();
 					} catch (SQLException e) {
-						exceptions.add(e);
-					} finally {
-						if (statement != null) {
-							try {
-								statement.close();
-							} catch (SQLException e) {
-								log.debug("could not close jdbc statement", e);
-							}
-						}
-						if (connection != null) {
-							try {
-								connectionProvider.closeConnection(connection);
-							} catch (SQLException e) {
-								log.debug("could not close jdbc connection", e);
-							}
-						}
+						log.debug("could not close jdbc statement", e);
 					}
 				}
-			}, metadata, serviceRegistry, ContributableMatcher.ALL);
+				if (connection != null) {
+					try {
+						connectionProvider.closeConnection(connection);
+					} catch (SQLException e) {
+						log.debug("could not close jdbc connection", e);
+					}
+				}
+			}
 		}
 
-		if (script) {
+		if (script && out != null) {
 			try (FileWriter writer = new FileWriter(out)) {
-				schemaUpdate.execute(new TargetDescriptor() {
-					@Override
-					public void accept(String command) {
-						try {
-							writer.write(command + ";\n");
-						} catch (IOException e) {
-							throw new RuntimeException(e);
-						}
-					}
-				}, metadata, serviceRegistry, ContributableMatcher.ALL);
+				for (String sql : dropSql) {
+					writer.write(sql + ";\n");
+				}
+				for (String sql : createSql) {
+					writer.write(sql + ";\n");
+				}
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}

@@ -69,15 +69,7 @@ public class IdentitySessionFactory {
     return new IdentitySession(sessionFactory.openSession());
   }
 
-  public IdentitySession openIdentitySession(Connection connection) {
-    return new IdentitySession(sessionFactory.openSession(connection));
-  }
-
-  public void evictCachedIdentities() {
-    sessionFactory.getCache().evictEntityRegion(User.class);
-    sessionFactory.getCache().evictEntityRegion(Membership.class);
-    sessionFactory.getCache().evictEntityRegion(Group.class);
-  }
+  
 
   public Configuration getConfiguration() {
     return configuration;

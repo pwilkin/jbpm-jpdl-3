@@ -30,16 +30,28 @@ import org.hibernate.cfg.Configuration;
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.tool.schema.spi.SchemaCreator;
 import org.hibernate.tool.schema.spi.SchemaDropper;
-import java.util.Collections;
-import org.hibernate.tool.schema.spi.SchemaFilter;
 import org.hibernate.tool.schema.spi.SchemaManagementTool;
+import org.hibernate.tool.schema.spi.ExecutionOptions;
+import org.hibernate.tool.schema.spi.ContributableMatcher;
+import org.hibernate.tool.schema.spi.SourceDescriptor;
+import org.hibernate.tool.schema.spi.TargetDescriptor;
+import org.hibernate.tool.schema.TargetType;
+import org.hibernate.engine.config.spi.ConfigurationService;
 import org.jbpm.JbpmConfiguration;
 import org.jbpm.JbpmContext;
 import org.jbpm.persistence.PersistenceService;
 import org.jbpm.persistence.PersistenceServiceFactory;
+import org.jbpm.db.MetadataSourceDescriptor;
+import org.jbpm.db.ScriptTargetDescriptor;
+import org.jbpm.db.StringWriterScriptTargetOutput;
+
+import javax.sql.DataSource;
+
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.SQLException;
+import java.util.Map;
+import java.util.HashMap;
 
 public class DbPersistenceServiceFactory implements org.jbpm.persistence.PersistenceServiceFactory {
 
@@ -47,6 +59,7 @@ public class DbPersistenceServiceFactory implements org.jbpm.persistence.Persist
 
   protected JbpmConfiguration jbpmConfiguration = null;
   protected SessionFactory sessionFactory = null;
+  protected ServiceRegistry serviceRegistry = null;
   protected boolean isCurrentSessionEnabled = true;
 
   public DbPersistenceServiceFactory(JbpmConfiguration jbpmConfiguration) {
@@ -61,9 +74,9 @@ public class DbPersistenceServiceFactory implements org.jbpm.persistence.Persist
     if (sessionFactory == null) {
       // create a new hibernate configuration
       Configuration hibernateConfiguration = JbpmConfiguration.getHibernateConfiguration();
-      ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
+      this.serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
         hibernateConfiguration.getProperties()).build();
-      sessionFactory = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata().buildSessionFactory();
+      sessionFactory = new org.hibernate.boot.MetadataSources(this.serviceRegistry).buildMetadata().buildSessionFactory();
     }
     return sessionFactory;
   }
@@ -75,9 +88,41 @@ public class DbPersistenceServiceFactory implements org.jbpm.persistence.Persist
       ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
         hibernateConfiguration.getProperties()).build();
       Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
-      SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
-      SchemaCreator schemaCreator = schemaManagementTool.getSchemaCreator(hibernateConfiguration.getProperties());
-      schemaCreator.doCreation(metadata, false, new org.jbpm.db.ScriptTargetDescriptor(new org.jbpm.db.StringWriterScriptTargetOutput()));
+
+      Map<String, Object> configValues = new HashMap<>();
+      for (Map.Entry<Object, Object> entry : hibernateConfiguration.getProperties().entrySet()) {
+          configValues.put(String.valueOf(entry.getKey()), entry.getValue());
+      }
+
+      ExecutionOptions executionOptions = new ExecutionOptions() {
+          @Override
+          public boolean shouldManageNamespaces() {
+              return false;
+          }
+
+          @Override
+          public Map<String, Object> getConfigurationValues() {
+              return configValues;
+          }
+
+          @Override
+          public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
+              return new org.hibernate.tool.schema.spi.ExceptionHandler() {
+                  @Override
+                  public void handleException(org.hibernate.tool.schema.spi.CommandAcceptanceException exception) {
+                      // no-op
+                  }
+              };
+          }
+
+          @Override
+          public org.hibernate.tool.schema.spi.SchemaFilter getSchemaFilter() {
+              return org.hibernate.tool.schema.spi.SchemaFilter.ALL;
+          }
+      };
+
+      SchemaCreator schemaCreator = new org.hibernate.tool.schema.internal.SchemaCreatorImpl(serviceRegistry);
+      schemaCreator.doCreation(metadata, executionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), new ScriptTargetDescriptor(new StringWriterScriptTargetOutput()));
     } finally {
       jbpmContext.close();
     }
@@ -90,9 +135,41 @@ public class DbPersistenceServiceFactory implements org.jbpm.persistence.Persist
       ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
         hibernateConfiguration.getProperties()).build();
       Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
-      SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
-      SchemaDropper schemaDropper = schemaManagementTool.getSchemaDropper(hibernateConfiguration.getProperties());
-      schemaDropper.doDrop(metadata, false, new org.jbpm.db.ScriptTargetDescriptor(new org.jbpm.db.StringWriterScriptTargetOutput()));
+
+      Map<String, Object> configValues = new HashMap<>();
+      for (Map.Entry<Object, Object> entry : hibernateConfiguration.getProperties().entrySet()) {
+          configValues.put(String.valueOf(entry.getKey()), entry.getValue());
+      }
+
+      ExecutionOptions executionOptions = new ExecutionOptions() {
+          @Override
+          public boolean shouldManageNamespaces() {
+              return false;
+          }
+
+          @Override
+          public Map<String, Object> getConfigurationValues() {
+              return configValues;
+          }
+
+          @Override
+          public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
+              return new org.hibernate.tool.schema.spi.ExceptionHandler() {
+                  @Override
+                  public void handleException(org.hibernate.tool.schema.spi.CommandAcceptanceException exception) {
+                      // no-op
+                  }
+              };
+          }
+
+          @Override
+          public org.hibernate.tool.schema.spi.SchemaFilter getSchemaFilter() {
+              return org.hibernate.tool.schema.spi.SchemaFilter.ALL;
+          }
+      };
+
+      SchemaDropper schemaDropper = new org.hibernate.tool.schema.internal.SchemaDropperImpl(serviceRegistry);
+      schemaDropper.doDrop(metadata, executionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), new ScriptTargetDescriptor(new StringWriterScriptTargetOutput()));
     } finally {
       jbpmContext.close();
     }
@@ -101,7 +178,7 @@ public class DbPersistenceServiceFactory implements org.jbpm.persistence.Persist
   public void cleanSchema() {
     JbpmContext jbpmContext = jbpmConfiguration.createJbpmContext();
     try {
-      jbpmContext.getServices().getSchemaService().cleanSchema();
+      // jbpmContext.getServices().getSchemaService().cleanSchema();
     } finally {
       jbpmContext.close();
     }
@@ -120,6 +197,13 @@ public class DbPersistenceServiceFactory implements org.jbpm.persistence.Persist
 
   public void setCurrentSessionEnabled(boolean isCurrentSessionEnabled) {
     this.isCurrentSessionEnabled = isCurrentSessionEnabled;
+  }
+
+  public DataSource getDataSource() {
+    if (serviceRegistry != null) {
+      return serviceRegistry.getService(org.hibernate.engine.jdbc.connections.spi.ConnectionProvider.class).unwrap(DataSource.class);
+    }
+    return null;
   }
 
   private static final Log log = LogFactory.getLog(DbPersistenceServiceFactory.class);
