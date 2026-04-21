@@ -44,7 +44,7 @@
   <properties>
     <apache.ant.version>1.10.15</apache.ant.version>
     <apache.cactus.version>1.8.0</apache.cactus.version>
-    <apache.jackrabbit.version>2.20.x</apache.jackrabbit.version>
+    <apache.jackrabbit.version>2.20.17</apache.jackrabbit.version>
     <birt.version>4.18</birt.version>
     <bpm.spec.version>1.0.0-Alpha1</bpm.spec.version>
     <bsh.version>2.0b4</bsh.version>
@@ -213,7 +213,7 @@
         <version>${dom4j.version}</version>
       </dependency>
       <dependency>
-        <groupId>dumbster</groupId>
+        <groupId>com.github.kirviq</groupId>
         <artifactId>dumbster</artifactId>
         <version>${dumbster.version}</version>
       </dependency>
@@ -417,13 +417,13 @@
 
       <!-- Database Driver Versions  -->
       <dependency>
-        <groupId>hsqldb</groupId>
+        <groupId>org.hsqldb</groupId>
         <artifactId>hsqldb</artifactId>
         <version>${hsqldb.version}</version>
       </dependency>
       <dependency>
-        <groupId>mysql</groupId>
-        <artifactId>mysql-connector-java</artifactId>
+        <groupId>com.mysql</groupId>
+        <artifactId>mysql-connector-j</artifactId>
         <version>${mysql.connector.version}</version>
       </dependency>
       <dependency>
@@ -612,7 +612,7 @@
       </properties>
       <dependencies>
         <dependency>
-          <groupId>hsqldb</groupId>
+          <groupId>org.hsqldb</groupId>
           <artifactId>hsqldb</artifactId>
           <scope>test</scope>
         </dependency>
@@ -633,7 +633,7 @@
       </activation>
       <dependencies>
         <dependency>
-          <groupId>hsqldb</groupId>
+          <groupId>org.hsqldb</groupId>
           <artifactId>hsqldb</artifactId>
           <scope>test</scope>
         </dependency>
@@ -654,8 +654,8 @@
       </activation>
       <dependencies>
         <dependency>
-          <groupId>mysql</groupId>
-          <artifactId>mysql-connector-java</artifactId>
+          <groupId>com.mysql</groupId>
+          <artifactId>mysql-connector-j</artifactId>
           <scope>test</scope>
         </dependency>
       </dependencies>

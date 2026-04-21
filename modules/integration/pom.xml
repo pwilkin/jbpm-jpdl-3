@@ -39,6 +39,38 @@
     <dependency>
       <groupId>org.jboss.bpm</groupId>
       <artifactId>bpm-spec-api</artifactId>
+      <!-- Exclude the ancient, rehosted-or-renamed transitives that bpm-spec-api's
+           1.0.0-Alpha1 pom declares under legacy groupIds that don't exist on
+           Maven Central (e.g. dom4j:dom4j, apache-xerces:*, sun-jaxb:*). These
+           are provided at runtime by the host application's own classpath
+           (Sandacz ships dom4j, xerces, jaxb already). Build just needs the
+           bpm-spec-api classes to compile against. -->
+      <exclusions>
+        <exclusion>
+          <groupId>dom4j</groupId>
+          <artifactId>dom4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>apache-xerces</groupId>
+          <artifactId>xml-apis</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>apache-xerces</groupId>
+          <artifactId>xercesImpl</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>wutka-dtdparser</groupId>
+          <artifactId>dtdparser121</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>javax.activation</groupId>
+          <artifactId>activation</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>sun-jaxb</groupId>
+          <artifactId>jaxb-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.jbpm.jbpm3</groupId>
@@ -74,22 +106,13 @@
     </dependency>
     
     <dependency>
-      <groupId>org.jboss.client</groupId>
-      <artifactId>jbossall-client</artifactId>
-      <version>${jboss.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.jboss.bpm</groupId>
-      <artifactId>bpm-spec-cts</artifactId>
-      <scope>test</scope>
-      <type>zip</type>
-    </dependency>
+    <!-- Removed: jbossall-client (absent from Central; test-only) and
+         bpm-spec-cts (absent from Central; JBoss BPM CTS test fixture) -->
+
   </dependencies>
   
   <build>
@@ -176,27 +199,9 @@
           </filesets>
         </configuration>
       </plugin>
-      <plugin>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>generate-sources</phase>
-            <goals>
-              <goal>unpack</goal>
-            </goals>
-            <configuration>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>org.jboss.bpm</groupId>
-                  <artifactId>bpm-spec-cts</artifactId>
-                  <type>zip</type>
-                </artifactItem>
-              </artifactItems>
-              <outputDirectory>src/cts</outputDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+      <!-- Removed: maven-dependency-plugin:unpack of bpm-spec-cts
+           (absent from Central; not needed for runtime jar) -->
+
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
