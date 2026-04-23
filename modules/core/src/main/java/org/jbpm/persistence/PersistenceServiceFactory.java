@@ -4,8 +4,9 @@ import java.io.Serializable;
 
 import org.hibernate.SessionFactory;
 import org.jbpm.JbpmConfiguration;
+import org.jbpm.svc.ServiceFactory;
 
-public interface PersistenceServiceFactory extends Serializable {
+public interface PersistenceServiceFactory extends ServiceFactory, Serializable {
 
   PersistenceService openService();
 
