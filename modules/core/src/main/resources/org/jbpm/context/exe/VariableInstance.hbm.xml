@@ -26,6 +26,7 @@
     <property name="name" column="NAME_"/>
     <property name="converter" 
               column="CONVERTER_" 
+              length="1"
               type="org.jbpm.db.hibernate.ConverterEnumType" />
 
     <many-to-one name="token" 

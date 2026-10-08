@@ -54,7 +54,8 @@ public class ConverterEnumType implements UserType {
     if (resultSet.wasNull()) { // Good practice to check for null
         return null;
     }
-    return Converters.getConverterByDatabaseId(converterDatabaseId);
+    // a CHAR column wider than the 1-char id (as created by Hibernate 6 before length="1") reads back space-padded
+    return Converters.getConverterByDatabaseId(converterDatabaseId.trim());
   }
 
   public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index, SharedSessionContractImplementor session) throws HibernateException, SQLException {
