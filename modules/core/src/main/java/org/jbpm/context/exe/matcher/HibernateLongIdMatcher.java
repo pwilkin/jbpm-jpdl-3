@@ -24,6 +24,8 @@ package org.jbpm.context.exe.matcher;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.SessionFactory;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.persister.entity.EntityPersister;
 import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.type.StandardBasicTypes;
@@ -46,10 +48,11 @@ public class HibernateLongIdMatcher implements JbpmTypeMatcher {
       
       SessionFactory sessionFactory = jbpmContext.getSessionFactory();
       if (sessionFactory!=null) {
-        jakarta.persistence.metamodel.EntityType<?> classMetadata = sessionFactory.getMetamodel().entity(valueClass);
-        matches =  ( (classMetadata!=null)
-                     && (classMetadata.getIdType().getJavaType()==Long.class)
-                   );
+        // getMetamodel().entity() throws for non-entities; Hibernate 3's getClassMetadata() returned null.
+        EntityPersister persister = ((SessionFactoryImplementor) sessionFactory).getMappingMetamodel().findEntityDescriptor(valueClass);
+        matches = ( (persister!=null)
+                    && (persister.getIdentifierType().getReturnedClass()==Long.class)
+                  );
       }
     } else {
       log.debug("no current context so valueClass cannot be stored as a long-id-ref to a hibernate object");
