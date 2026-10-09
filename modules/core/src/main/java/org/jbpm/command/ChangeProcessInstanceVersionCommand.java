@@ -1,7 +1,9 @@
 package org.jbpm.command;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -221,10 +223,10 @@ public class ChangeProcessInstanceVersionCommand extends AbstractProcessInstance
     q.setParameter("taskName", replacementTaskName);
     q.setParameter("taskNodeId", newTaskNode.getId());
 
-    Object[] distinctResult = (Object[]) q.uniqueResult();
+    List distinctResult = new ArrayList(new LinkedHashSet(q.list()));
     Task newTask = null;
-    if (distinctResult != null && distinctResult.length == 1 && distinctResult[0] instanceof Task) {
-    	newTask = (Task) distinctResult[0];
+    if (distinctResult.size() == 1 && distinctResult.get(0) instanceof Task) {
+    	newTask = (Task) distinctResult.get(0);
     }
     if (newTask == null)
     {
