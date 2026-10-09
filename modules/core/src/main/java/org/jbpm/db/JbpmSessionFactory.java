@@ -22,6 +22,7 @@
 package org.jbpm.db;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.util.Collection;
@@ -148,14 +149,20 @@ public class JbpmSessionFactory implements Serializable {
     // check if the properties in the hibernate.cfg.xml need to be overwritten by a separate properties file.
     if (JbpmConfiguration.Configs.hasObject("resource.hibernate.properties")) {
       String hibernatePropertiesResource = JbpmConfiguration.Configs.getString("resource.hibernate.properties");
-      Properties hibernateProperties = new Properties();
-      try {
-        hibernateProperties.load( ClassLoaderUtil.getStream(hibernatePropertiesResource) );
-      } catch (IOException e) {
-        throw new JbpmException("couldn't load the hibernate properties from resource '"+hibernatePropertiesResource+"'", e);
+      InputStream inputStream = ClassLoaderUtil.getStream(hibernatePropertiesResource);
+      if (inputStream == null) {
+        log.warn("hibernate properties resource '" + hibernatePropertiesResource + "' not found");
+      } else {
+        Properties hibernateProperties = new Properties();
+        try (InputStream in = inputStream) {
+          hibernateProperties.load(in);
+        } catch (IOException e) {
+          throw new JbpmException("couldn't load the hibernate properties from resource '"+hibernatePropertiesResource+"'", e);
+        }
+        log.debug("overriding hibernate properties with "+ hibernateProperties);
+        // add, don't replace: setProperties() would drop everything read from hibernate.cfg.xml
+        configuration.addProperties(hibernateProperties);
       }
-      log.debug("overriding hibernate properties with "+ hibernateProperties);
-      configuration.setProperties(hibernateProperties);
     }
     
     return configuration;
@@ -258,9 +265,7 @@ public class JbpmSessionFactory implements Serializable {
   
   public JbpmSchema getJbpmSchema() {
     if (jbpmSchema==null) {
-      ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(configuration.getProperties()).build();
-      org.hibernate.boot.Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
-      jbpmSchema = new JbpmSchema(metadata, serviceRegistry);
+      jbpmSchema = new JbpmSchema(configuration);
     }
     return jbpmSchema;
   }

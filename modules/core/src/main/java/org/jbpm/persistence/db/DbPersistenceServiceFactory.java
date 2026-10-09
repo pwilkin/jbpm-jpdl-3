@@ -21,46 +21,34 @@
  */
 package org.jbpm.persistence.db;
 
+import javax.sql.DataSource;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.SessionFactory;
-import org.hibernate.boot.Metadata;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.service.ServiceRegistry;
-import org.hibernate.tool.schema.spi.SchemaCreator;
-import org.hibernate.tool.schema.spi.SchemaDropper;
-import org.hibernate.tool.schema.spi.SchemaManagementTool;
-import org.hibernate.tool.schema.spi.ExecutionOptions;
-import org.hibernate.tool.schema.spi.ContributableMatcher;
-import org.hibernate.tool.schema.spi.SourceDescriptor;
-import org.hibernate.tool.schema.spi.TargetDescriptor;
-import org.hibernate.tool.schema.TargetType;
-import org.hibernate.engine.config.spi.ConfigurationService;
 import org.jbpm.JbpmConfiguration;
-import org.jbpm.JbpmContext;
+import org.jbpm.db.JbpmSessionFactory;
+import org.jbpm.db.hibernate.HibernateHelper;
 import org.jbpm.persistence.PersistenceService;
-import org.jbpm.persistence.PersistenceServiceFactory;
-import org.jbpm.db.MetadataSourceDescriptor;
-import org.jbpm.db.ScriptTargetDescriptor;
-import org.jbpm.db.StringWriterScriptTargetOutput;
-
-import javax.sql.DataSource;
-
-import java.sql.Connection;
-import java.sql.Statement;
-import java.sql.SQLException;
-import java.util.Map;
-import java.util.HashMap;
+import org.jbpm.util.JndiUtil;
 
 public class DbPersistenceServiceFactory implements org.jbpm.persistence.PersistenceServiceFactory {
 
   private static final long serialVersionUID = 1L;
 
   protected JbpmConfiguration jbpmConfiguration = null;
+  protected Configuration configuration = null;
   protected SessionFactory sessionFactory = null;
-  protected ServiceRegistry serviceRegistry = null;
-  protected boolean isCurrentSessionEnabled = true;
+  protected String sessionFactoryJndiName = null;
+  protected DataSource dataSource = null;
+  protected String dataSourceJndiName = null;
+  protected boolean isTransactionEnabled = true;
+  protected boolean isCurrentSessionEnabled = false;
+
+  /** used when the factory is configured as a bean in jbpm.cfg.xml */
+  public DbPersistenceServiceFactory() {
+  }
 
   public DbPersistenceServiceFactory(JbpmConfiguration jbpmConfiguration) {
     this.jbpmConfiguration = jbpmConfiguration;
@@ -70,125 +58,104 @@ public class DbPersistenceServiceFactory implements org.jbpm.persistence.Persist
     return new DbPersistenceService(this);
   }
 
-  public SessionFactory getSessionFactory() {
+  /**
+   * the hibernate configuration, read from the resource configured as
+   * <code>resource.hibernate.cfg.xml</code> (and optionally
+   * <code>resource.hibernate.properties</code>) in jbpm.cfg.xml.
+   */
+  public synchronized Configuration getConfiguration() {
+    if (configuration == null) {
+      String hibernateCfgXmlResource = null;
+      if (JbpmConfiguration.Configs.hasObject("resource.hibernate.cfg.xml")) {
+        hibernateCfgXmlResource = JbpmConfiguration.Configs.getString("resource.hibernate.cfg.xml");
+      }
+      configuration = JbpmSessionFactory.createConfiguration(hibernateCfgXmlResource);
+    }
+    return configuration;
+  }
+
+  public synchronized SessionFactory getSessionFactory() {
     if (sessionFactory == null) {
-      // create a new hibernate configuration
-      Configuration hibernateConfiguration = JbpmConfiguration.getHibernateConfiguration();
-      this.serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
-        hibernateConfiguration.getProperties()).build();
-      sessionFactory = new org.hibernate.boot.MetadataSources(this.serviceRegistry).buildMetadata().buildSessionFactory();
+      if (sessionFactoryJndiName != null) {
+        log.debug("looking up hibernate session factory in jndi '" + sessionFactoryJndiName + "'");
+        sessionFactory = (SessionFactory) JndiUtil.lookup(sessionFactoryJndiName, SessionFactory.class);
+      } else {
+        log.debug("building hibernate session factory");
+        sessionFactory = getConfiguration().buildSessionFactory();
+      }
     }
     return sessionFactory;
   }
 
   public void createSchema() {
-    JbpmContext jbpmContext = jbpmConfiguration.createJbpmContext();
-    try {
-      Configuration hibernateConfiguration = JbpmConfiguration.getHibernateConfiguration();
-      ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
-        hibernateConfiguration.getProperties()).build();
-      Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
-
-      Map<String, Object> configValues = new HashMap<>();
-      for (Map.Entry<Object, Object> entry : hibernateConfiguration.getProperties().entrySet()) {
-          configValues.put(String.valueOf(entry.getKey()), entry.getValue());
-      }
-
-      ExecutionOptions executionOptions = new ExecutionOptions() {
-          @Override
-          public boolean shouldManageNamespaces() {
-              return false;
-          }
-
-          @Override
-          public Map<String, Object> getConfigurationValues() {
-              return configValues;
-          }
-
-          @Override
-          public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
-              return new org.hibernate.tool.schema.spi.ExceptionHandler() {
-                  @Override
-                  public void handleException(org.hibernate.tool.schema.spi.CommandAcceptanceException exception) {
-                      // no-op
-                  }
-              };
-          }
-
-          @Override
-          public org.hibernate.tool.schema.spi.SchemaFilter getSchemaFilter() {
-              return org.hibernate.tool.schema.spi.SchemaFilter.ALL;
-          }
-      };
-
-      SchemaCreator schemaCreator = new org.hibernate.tool.schema.internal.SchemaCreatorImpl(serviceRegistry);
-      schemaCreator.doCreation(metadata, executionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), new ScriptTargetDescriptor(new StringWriterScriptTargetOutput()));
-    } finally {
-      jbpmContext.close();
-    }
+    getSessionFactory().getSchemaManager().exportMappedObjects(false);
+    HibernateHelper.clearHibernateCache(getSessionFactory());
   }
 
   public void dropSchema() {
-    JbpmContext jbpmContext = jbpmConfiguration.createJbpmContext();
-    try {
-      Configuration hibernateConfiguration = JbpmConfiguration.getHibernateConfiguration();
-      ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
-        hibernateConfiguration.getProperties()).build();
-      Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
-
-      Map<String, Object> configValues = new HashMap<>();
-      for (Map.Entry<Object, Object> entry : hibernateConfiguration.getProperties().entrySet()) {
-          configValues.put(String.valueOf(entry.getKey()), entry.getValue());
-      }
-
-      ExecutionOptions executionOptions = new ExecutionOptions() {
-          @Override
-          public boolean shouldManageNamespaces() {
-              return false;
-          }
-
-          @Override
-          public Map<String, Object> getConfigurationValues() {
-              return configValues;
-          }
-
-          @Override
-          public org.hibernate.tool.schema.spi.ExceptionHandler getExceptionHandler() {
-              return new org.hibernate.tool.schema.spi.ExceptionHandler() {
-                  @Override
-                  public void handleException(org.hibernate.tool.schema.spi.CommandAcceptanceException exception) {
-                      // no-op
-                  }
-              };
-          }
-
-          @Override
-          public org.hibernate.tool.schema.spi.SchemaFilter getSchemaFilter() {
-              return org.hibernate.tool.schema.spi.SchemaFilter.ALL;
-          }
-      };
-
-      SchemaDropper schemaDropper = new org.hibernate.tool.schema.internal.SchemaDropperImpl(serviceRegistry);
-      schemaDropper.doDrop(metadata, executionOptions, ContributableMatcher.ALL, new MetadataSourceDescriptor(), new ScriptTargetDescriptor(new StringWriterScriptTargetOutput()));
-    } finally {
-      jbpmContext.close();
-    }
+    HibernateHelper.clearHibernateCache(getSessionFactory());
+    getSessionFactory().getSchemaManager().dropMappedObjects(false);
   }
 
+  /** deletes all records from the jbpm tables */
   public void cleanSchema() {
-    JbpmContext jbpmContext = jbpmConfiguration.createJbpmContext();
-    try {
-      // jbpmContext.getServices().getSchemaService().cleanSchema();
-    } finally {
-      jbpmContext.close();
-    }
+    getSessionFactory().getSchemaManager().truncateMappedObjects();
+    HibernateHelper.clearHibernateCache(getSessionFactory());
   }
 
   public void close() {
     if (sessionFactory != null) {
+      log.debug("closing hibernate session factory");
       sessionFactory.close();
       sessionFactory = null;
+      // a hibernate 6 configuration cannot build a second session factory once the first
+      // one is closed (its bootstrap registry is stopped), so start from a fresh one
+      configuration = null;
     }
+  }
+
+  public DataSource getDataSource() {
+    if (dataSource == null && dataSourceJndiName != null) {
+      log.debug("looking up datasource from jndi location '" + dataSourceJndiName + "'");
+      dataSource = (DataSource) JndiUtil.lookup(dataSourceJndiName, DataSource.class);
+    }
+    return dataSource;
+  }
+
+  public void setConfiguration(Configuration configuration) {
+    this.configuration = configuration;
+  }
+
+  public void setSessionFactory(SessionFactory sessionFactory) {
+    this.sessionFactory = sessionFactory;
+  }
+
+  public void setDataSource(DataSource dataSource) {
+    this.dataSource = dataSource;
+  }
+
+  public String getDataSourceJndiName() {
+    return dataSourceJndiName;
+  }
+
+  public void setDataSourceJndiName(String dataSourceJndiName) {
+    this.dataSourceJndiName = dataSourceJndiName;
+  }
+
+  public String getSessionFactoryJndiName() {
+    return sessionFactoryJndiName;
+  }
+
+  public void setSessionFactoryJndiName(String sessionFactoryJndiName) {
+    this.sessionFactoryJndiName = sessionFactoryJndiName;
+  }
+
+  public boolean isTransactionEnabled() {
+    return isTransactionEnabled;
+  }
+
+  public void setTransactionEnabled(boolean isTransactionEnabled) {
+    this.isTransactionEnabled = isTransactionEnabled;
   }
 
   public boolean isCurrentSessionEnabled() {
@@ -197,13 +164,6 @@ public class DbPersistenceServiceFactory implements org.jbpm.persistence.Persist
 
   public void setCurrentSessionEnabled(boolean isCurrentSessionEnabled) {
     this.isCurrentSessionEnabled = isCurrentSessionEnabled;
-  }
-
-  public DataSource getDataSource() {
-    if (serviceRegistry != null) {
-      return serviceRegistry.getService(org.hibernate.engine.jdbc.connections.spi.ConnectionProvider.class).unwrap(DataSource.class);
-    }
-    return null;
   }
 
   private static final Log log = LogFactory.getLog(DbPersistenceServiceFactory.class);

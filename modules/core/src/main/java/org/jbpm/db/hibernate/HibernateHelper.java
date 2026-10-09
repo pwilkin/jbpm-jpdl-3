@@ -35,6 +35,7 @@ import org.jbpm.db.MetadataSourceDescriptor;
 
 import org.hibernate.boot.Metadata;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.tool.schema.spi.SchemaCreator;
@@ -47,11 +48,27 @@ import org.jbpm.db.StringWriterScriptTargetOutput;
 
 public class HibernateHelper {
 
+  /**
+   * builds a service registry from the configuration's own registry builder, which holds the
+   * <code>&lt;mapping&gt;</code> entries of the configured hibernate.cfg.xml, so that
+   * {@link #buildMetadata(ServiceRegistry)} sees all mapped classes.
+   */
+  public static ServiceRegistry buildServiceRegistry(Configuration configuration) {
+    return configuration.getStandardServiceRegistryBuilder().applySettings(configuration.getProperties()).build();
+  }
+
+  public static Metadata buildMetadata(ServiceRegistry serviceRegistry) {
+    return new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
+  }
+
+  public static void clearHibernateCache(SessionFactory sessionFactory) {
+    sessionFactory.getCache().evictAllRegions();
+  }
+
   public static String[] getCreateSchemaSql(Configuration configuration) {
     try {
-      ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
-        configuration.getProperties()).build();
-      Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
+      ServiceRegistry serviceRegistry = buildServiceRegistry(configuration);
+      Metadata metadata = buildMetadata(serviceRegistry);
       SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
 
       Map<String, Object> configValues = new HashMap<>();
@@ -100,9 +117,8 @@ public class HibernateHelper {
 
   public static String[] getDropSchemaSql(Configuration configuration) {
     try {
-      ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder().applySettings(
-        configuration.getProperties()).build();
-      Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry).buildMetadata();
+      ServiceRegistry serviceRegistry = buildServiceRegistry(configuration);
+      Metadata metadata = buildMetadata(serviceRegistry);
       SchemaManagementTool schemaManagementTool = serviceRegistry.getService(SchemaManagementTool.class);
 
       Map<String, Object> configValues = new HashMap<>();

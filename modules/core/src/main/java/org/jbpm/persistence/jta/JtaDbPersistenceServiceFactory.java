@@ -27,7 +27,6 @@ import jakarta.transaction.UserTransaction;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.SessionFactory;
 import org.jbpm.JbpmConfiguration;
 import org.jbpm.JbpmException;
 import org.jbpm.persistence.PersistenceService;
@@ -42,26 +41,15 @@ public class JtaDbPersistenceServiceFactory extends org.jbpm.persistence.db.DbPe
   protected boolean isCurrentSessionEnabled = true;
   protected String userTransactionName = "java:comp/UserTransaction";
 
+  public JtaDbPersistenceServiceFactory() {
+  }
+
   public JtaDbPersistenceServiceFactory(JbpmConfiguration jbpmConfiguration) {
     super(jbpmConfiguration);
   }
 
   public PersistenceService openService() {
     return new JtaDbPersistenceService(this);
-  }
-
-  public SessionFactory getSessionFactory() {
-    if (sessionFactory == null) {
-      sessionFactory = JbpmConfiguration.getHibernateConfiguration().buildSessionFactory();
-    }
-    return sessionFactory;
-  }
-
-  public void close() {
-    if (sessionFactory != null) {
-      sessionFactory.close();
-      sessionFactory = null;
-    }
   }
 
   public UserTransaction getUserTransaction() {

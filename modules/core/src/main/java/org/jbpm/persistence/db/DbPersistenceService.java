@@ -89,6 +89,7 @@ public class DbPersistenceService implements Service, PersistenceService {
   DbPersistenceService(DbPersistenceServiceFactory persistenceServiceFactory, Services services) {
     this.persistenceServiceFactory = persistenceServiceFactory;
     this.isCurrentSessionEnabled = persistenceServiceFactory.isCurrentSessionEnabled();
+    this.isTransactionEnabled = persistenceServiceFactory.isTransactionEnabled();
     this.services = services;
   }
 
@@ -108,9 +109,8 @@ public class DbPersistenceService implements Service, PersistenceService {
         mustSessionBeFlushed = false;
         mustConnectionBeClosed = false;
       } else if (connection!=null) {
-        log.warn("DbPersistenceService: openSession(connection) is deprecated. Opening session with default connection strategy. The provided connection will be ignored.");
-        // log.debug("creating hibernate session with connection "+connection); // Connection will be ignored
-        session = getSessionFactory().openSession(); // Changed from openSession(connection)
+        log.debug("creating hibernate session with connection "+connection);
+        session = getSessionFactory().withOptions().connection(connection).openSession();
         mustSessionBeClosed = true;
         mustSessionBeFlushed = true;
         mustConnectionBeClosed = false;

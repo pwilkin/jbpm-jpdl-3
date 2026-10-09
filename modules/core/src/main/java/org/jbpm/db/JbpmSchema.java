@@ -80,6 +80,8 @@ import org.hibernate.engine.jdbc.spi.JdbcServices;
 import org.hibernate.engine.config.spi.ConfigurationService;
 import org.hibernate.mapping.Table;
 import org.hibernate.service.ServiceRegistry;
+import org.hibernate.cfg.Configuration;
+import org.jbpm.db.hibernate.HibernateHelper;
 
 import org.jbpm.JbpmException;
 
@@ -101,6 +103,14 @@ public class JbpmSchema implements Serializable {
 
   Connection connection = null;
   Statement statement = null;
+
+  public JbpmSchema(Configuration configuration) {
+    this(HibernateHelper.buildServiceRegistry(configuration));
+  }
+
+  private JbpmSchema(ServiceRegistry serviceRegistry) {
+    this(HibernateHelper.buildMetadata(serviceRegistry), serviceRegistry);
+  }
 
   public JbpmSchema(org.hibernate.boot.Metadata metadata, ServiceRegistry serviceRegistry) {
     this.metadata = metadata;
@@ -411,29 +421,26 @@ public class JbpmSchema implements Serializable {
     String hibernateCfgXml = (args.length > index ? args[index] : "hibernate.cfg.xml");
     String hibernateProperties = (args.length > (index + 1) ? args[index + 1] : null);
 
-    Properties properties = new Properties();
-    try (InputStream inputStream = new FileInputStream(hibernateCfgXml)) {
-      properties.loadFromXML(inputStream);
-    } catch (IOException e) {
-      throw new JbpmException("couldn't load hibernate configuration", e);
+    Configuration configuration = new Configuration();
+    File cfgFile = new File(hibernateCfgXml);
+    if (cfgFile.exists()) {
+      configuration.configure(cfgFile);
+    } else {
+      configuration.configure(hibernateCfgXml);
     }
 
     if (hibernateProperties != null) {
+      Properties properties = new Properties();
       try (InputStream inputStream = new FileInputStream(hibernateProperties)) {
         properties.load(inputStream);
       } catch (IOException e) {
         throw new JbpmException("couldn't load hibernate properties", e);
       }
+      configuration.addProperties(properties);
     }
 
-    ServiceRegistry serviceRegistry = new StandardServiceRegistryBuilder()
-      .applySettings(properties)
-      .build();
-
-    Metadata metadata = new org.hibernate.boot.MetadataSources(serviceRegistry)
-      .buildMetadata();
-
-    return new Object[]{metadata, serviceRegistry};
+    ServiceRegistry serviceRegistry = HibernateHelper.buildServiceRegistry(configuration);
+    return new Object[]{HibernateHelper.buildMetadata(serviceRegistry), serviceRegistry};
   }
 
   void saveSqlScript(String fileName, String[] sql) throws FileNotFoundException {
