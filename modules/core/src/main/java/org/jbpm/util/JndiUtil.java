@@ -22,7 +22,6 @@
 package org.jbpm.util;
 
 import javax.naming.InitialContext;
-import javax.rmi.PortableRemoteObject;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -38,7 +37,8 @@ public class JndiUtil {
     try {
       InitialContext initialContext = new InitialContext();
       object = initialContext.lookup(jndiName);
-      object = PortableRemoteObject.narrow(object, type);
+      // a plain type check: PortableRemoteObject.narrow needs a CORBA ORB, which Java 11+ no longer ships
+      object = type.cast(object);
       // fetch from JNDI
       log.debug("fetched '"+object+"' from JNDI location '"+jndiName+"'");
     } catch (Exception e) {
