@@ -23,6 +23,7 @@ package org.jbpm.graph.node;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Locale;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -43,7 +44,7 @@ public class Join extends Node implements Parsable {
   
   /** 
    * specifies wether what type of hibernate lock should be acquired.
-   * null value defaults to LockMode.FORCE 
+   * null value defaults to LockMode.PESSIMISTIC_FORCE_INCREMENT (jBPM 3: FORCE)
    */ 
   String parentLockMode;
 
@@ -86,13 +87,32 @@ public class Join extends Node implements Parsable {
   public void read(Element element, JpdlXmlReader jpdlReader) {
     String lock = element.attributeValue("lock");
     if (lock != null) {
-      LockMode lockMode = LockMode.valueOf(lock.toUpperCase());
+      LockMode lockMode = parseLockMode(lock);
       if (lockMode != null)
         parentLockMode = lockMode.toString();
-      else if ("pessimistic".equals(lock))
-        parentLockMode = LockMode.PESSIMISTIC_WRITE.toString();
       else
         jpdlReader.addError("invalid parent lock mode '" + lock + "'");
+    }
+  }
+
+  /**
+   * resolves a lock mode name, including the jBPM 3 / Hibernate 3 names that Hibernate 6 no
+   * longer has and that may still be stored in existing process definitions: "pessimistic" and
+   * UPGRADE map to PESSIMISTIC_WRITE, FORCE to PESSIMISTIC_FORCE_INCREMENT.
+   * @return the lock mode, or null if the name is not known
+   */
+  static LockMode parseLockMode(String lock) {
+    String name = lock.trim().toUpperCase(Locale.ROOT);
+    if (name.equals("PESSIMISTIC") || name.equals("UPGRADE")) {
+      return LockMode.PESSIMISTIC_WRITE;
+    }
+    if (name.equals("FORCE")) {
+      return LockMode.PESSIMISTIC_FORCE_INCREMENT;
+    }
+    try {
+      return LockMode.valueOf(name);
+    } catch (IllegalArgumentException e) {
+      return null;
     }
   }
 
@@ -121,7 +141,11 @@ public class Join extends Node implements Parsable {
         Session session = (jbpmContext!=null ? jbpmContext.getSession() : null);
         if (session!=null) {
           // force version increment by default (LockMode.FORCE)
-          LockMode lockMode = parentLockMode != null ? LockMode.valueOf(parentLockMode.toUpperCase()) : LockMode.PESSIMISTIC_FORCE_INCREMENT;
+          LockMode lockMode = parentLockMode != null ? parseLockMode(parentLockMode) : null;
+          if (lockMode == null) {
+            if (parentLockMode != null) log.warn("unknown parent lock mode '" + parentLockMode + "' in " + this + ", using " + LockMode.PESSIMISTIC_FORCE_INCREMENT);
+            lockMode = LockMode.PESSIMISTIC_FORCE_INCREMENT;
+          }
           log.debug("acquiring " + lockMode + " lock on " + parentToken);
           // lock updates as appropriate, no need to flush here
           session.lock(parentToken, lockMode);
