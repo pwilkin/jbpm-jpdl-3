@@ -35,6 +35,7 @@ import org.hibernate.query.Query;
 import org.hibernate.Session;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.ParameterExpression;
 import jakarta.persistence.criteria.Root;
 import org.jbpm.JbpmException;
 import org.jbpm.graph.def.ProcessDefinition;
@@ -306,8 +307,11 @@ public class GraphSession
     CriteriaBuilder cb = session.getCriteriaBuilder();
     CriteriaQuery<ProcessInstance> cq = cb.createQuery(ProcessInstance.class);
     Root<ProcessInstance> root = cq.from(ProcessInstance.class);
-    cq.select(root).where(cb.equal(root.get("processDefinition"), processDefinition));
-    return session.createQuery(cq).setMaxResults(1).uniqueResult();
+    // bind the definition as a parameter: Hibernate 6 fails with an NPE when an entity is
+    // passed to CriteriaBuilder.equal() as a literal
+    ParameterExpression<ProcessDefinition> definition = cb.parameter(ProcessDefinition.class);
+    cq.select(root).where(cb.equal(root.get("processDefinition"), definition));
+    return session.createQuery(cq).setParameter(definition, processDefinition).setMaxResults(1).uniqueResult();
   }
 
   protected List findReferencingProcessStates(ProcessDefinition subProcessDefinition)
