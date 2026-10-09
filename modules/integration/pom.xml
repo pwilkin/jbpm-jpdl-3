@@ -36,6 +36,13 @@
 
   <!-- Dependencies -->
   <dependencies>
+    <!-- first on the classpath: Hibernate 6 needs jboss-logging 3, while the JBoss Microcontainer
+         stack brings jboss-logging-spi 2, which has an older org.jboss.logging.Logger -->
+    <dependency>
+      <groupId>org.jboss.logging</groupId>
+      <artifactId>jboss-logging</artifactId>
+      <version>3.5.0.Final</version>
+    </dependency>
     <dependency>
       <groupId>org.jboss.bpm</groupId>
       <artifactId>bpm-spec-api</artifactId>
@@ -69,6 +76,11 @@
         <exclusion>
           <groupId>sun-jaxb</groupId>
           <artifactId>jaxb-api</artifactId>
+        </exclusion>
+        <!-- Hibernate 3; jBPM uses Hibernate 6 (hibernate-core below) -->
+        <exclusion>
+          <groupId>org.hibernate</groupId>
+          <artifactId>hibernate</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -108,6 +120,12 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- javax.xml.bind left the JDK in Java 11; JBoss XB needs it to parse the test beans -->
+    <dependency>
+      <groupId>javax.xml.bind</groupId>
+      <artifactId>jaxb-api</artifactId>
       <scope>test</scope>
     </dependency>
     <!-- Removed: jbossall-client (absent from Central; test-only) and
@@ -189,18 +207,9 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <artifactId>maven-clean-plugin</artifactId>
-        <configuration>
-          <filesets>
-            <fileset>
-              <directory>src/cts</directory>
-            </fileset>
-          </filesets>
-        </configuration>
-      </plugin>
       <!-- Removed: maven-dependency-plugin:unpack of bpm-spec-cts
-           (absent from Central; not needed for runtime jar) -->
+           (absent from Central; not needed for runtime jar). The CTS sources it
+           unpacked are committed under src/cts, so clean must not delete them. -->
 
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
@@ -213,6 +222,8 @@
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
+          <!-- the JBoss Microcontainer kernel used by these tests reflects into java.lang (JDK 17+) -->
+          <argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
           <systemProperties>
             <property>
               <name>bpm.dialect</name>
