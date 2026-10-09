@@ -37,7 +37,7 @@ public class PersistenceDbServiceNoTxTest extends AbstractJbpmTestCase {
     );
     jbpmContext = jbpmConfiguration.createJbpmContext();
     mockSessionFactory = new MockSessionFactory();
-    jbpmContext.setSessionFactory(mockSessionFactory);
+    jbpmContext.setSessionFactory(mockSessionFactory.createSessionFactory());
   }
 
   protected void tearDown() throws Exception
@@ -52,7 +52,7 @@ public class PersistenceDbServiceNoTxTest extends AbstractJbpmTestCase {
   // hibernate creates connections
 
   public void testDefaultCommit() {
-    MockSession mockSession = (MockSession) jbpmContext.getSession();
+    MockSession mockSession = MockSession.of(jbpmContext.getSession());
     assertNull(mockSession.transaction);
     jbpmContext.close();
 
@@ -76,7 +76,7 @@ public class PersistenceDbServiceNoTxTest extends AbstractJbpmTestCase {
   }
   
   public void testDefaultCommitAfterGetConnection() {
-    MockSession mockSession = (MockSession) jbpmContext.getSession();
+    MockSession mockSession = MockSession.of(jbpmContext.getSession());
     jbpmContext.getConnection();
     jbpmContext.close();
 
@@ -107,7 +107,7 @@ public class PersistenceDbServiceNoTxTest extends AbstractJbpmTestCase {
     Connection mockConnection = connectionHelper.createMockConnection();
     jbpmContext.setConnection(mockConnection);
 
-    MockSession mockSession = (MockSession) jbpmContext.getSession();
+    MockSession mockSession = MockSession.of(jbpmContext.getSession());
     jbpmContext.close();
 
     assertNull(mockSession.transaction);
@@ -142,7 +142,7 @@ public class PersistenceDbServiceNoTxTest extends AbstractJbpmTestCase {
 	Connection mockConnection = connectionHelper.createMockConnection();
     jbpmContext.setConnection(mockConnection);
 
-    MockSession mockSession = (MockSession) jbpmContext.getSession();
+    MockSession mockSession = MockSession.of(jbpmContext.getSession());
     jbpmContext.getConnection();
     jbpmContext.close();
 
@@ -176,7 +176,7 @@ public class PersistenceDbServiceNoTxTest extends AbstractJbpmTestCase {
 
   public void testFlushException() {
     mockSessionFactory.setFailOnFlush(true);
-    MockSession mockSession = (MockSession) jbpmContext.getSession();
+    MockSession mockSession = MockSession.of(jbpmContext.getSession());
     try {
       jbpmContext.close();      
       fail("expected exception");
@@ -188,7 +188,7 @@ public class PersistenceDbServiceNoTxTest extends AbstractJbpmTestCase {
 
   public void testCloseException() {
     mockSessionFactory.setFailOnClose(true);
-    MockSession mockSession = (MockSession) jbpmContext.getSession();
+    MockSession mockSession = MockSession.of(jbpmContext.getSession());
     try {
       jbpmContext.close();      
       fail("expected exception");

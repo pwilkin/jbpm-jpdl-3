@@ -104,10 +104,9 @@ public class TaskMailTest extends AbstractJbpmTestCase
     ProcessInstance processInstance = new ProcessInstance(processDefinition);
     processInstance.signal();
 
-    assertTrue(server.getReceivedEmailSize() == 1);
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage) emailIter.next();
-    emailIter.remove();
+    assertTrue(server.getReceivedEmails().size() == 1);
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
     assertEquals("you@example.domain", email.getHeaderValue("To"));
     assertEquals("Task 'laundry'", email.getHeaderValue("Subject"));
@@ -181,7 +180,7 @@ public class TaskMailTest extends AbstractJbpmTestCase
     ProcessInstance processInstance = new ProcessInstance(processDefinition);
     processInstance.signal();
 
-    assertTrue(server.getReceivedEmailSize() == 0);
+    assertTrue(server.getReceivedEmails().size() == 0);
 
     TestSchedulerService testSchedulerService = (TestSchedulerService) jbpmContext.getServices().getService("scheduler");
     assertEquals(1, testSchedulerService.createdTimers.size());
@@ -192,10 +191,9 @@ public class TaskMailTest extends AbstractJbpmTestCase
     
     createdTimer.execute(jbpmContext);
 
-    assertTrue(server.getReceivedEmailSize() == 1);
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage) emailIter.next();
-    emailIter.remove();
+    assertTrue(server.getReceivedEmails().size() == 1);
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
     assertEquals("you@example.domain", email.getHeaderValue("To"));
     assertEquals("Task 'laundry' !", email.getHeaderValue("Subject"));
@@ -237,7 +235,7 @@ public class TaskMailTest extends AbstractJbpmTestCase
     ProcessInstance processInstance = new ProcessInstance(processDefinition);
     processInstance.signal();
 
-    assertEquals(0, server.getReceivedEmailSize());
+    assertEquals(0, server.getReceivedEmails().size());
 
     TaskMgmtInstance taskMgmtInstance = processInstance.getTaskMgmtInstance();
     TaskInstance taskInstance = (TaskInstance) taskMgmtInstance.getTaskInstances().iterator().next();
@@ -246,6 +244,6 @@ public class TaskMailTest extends AbstractJbpmTestCase
     assertEquals("ghost", taskInstance.getActorId());
     
     taskInstance.end();
-    assertEquals(0, server.getReceivedEmailSize());
+    assertEquals(0, server.getReceivedEmails().size());
   }
 }

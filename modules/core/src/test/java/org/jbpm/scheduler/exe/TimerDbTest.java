@@ -29,7 +29,6 @@ import java.util.TimerTask;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.criterion.Restrictions;
 import org.jbpm.context.exe.ContextInstance;
 import org.jbpm.db.AbstractDbTestCase;
 import org.jbpm.graph.def.ActionHandler;
@@ -285,8 +284,8 @@ public class TimerDbTest extends AbstractDbTestCase {
 
       processInstance = saveAndReload(processInstance);
 
-      List timersByName = session.createCriteria(Timer.class)
-          .add(Restrictions.eq("name", "reminder"))
+      List timersByName = session.createQuery("from org.jbpm.job.Timer where name = :name", Timer.class)
+          .setParameter("name", "reminder")
           .list();
       assertNotNull(timersByName);
       assertEquals(1, timersByName.size());

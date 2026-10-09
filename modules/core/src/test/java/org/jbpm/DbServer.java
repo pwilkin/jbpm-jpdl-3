@@ -1,9 +1,7 @@
 package org.jbpm;
 
 import org.hibernate.cfg.Configuration;
-import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hsqldb.Server;
-import org.hsqldb.util.DatabaseManager;
 
 /**
  * use this in combination with the HQL editor of the hibernate plugin.
@@ -13,7 +11,6 @@ public class DbServer {
   public static void main(String[] args) {
     Configuration configuration = new Configuration();
     configuration.configure();
-    new SchemaExport(configuration).create(true, true);
 
     Server server = new Server();
     server.setSilent(false);
@@ -22,6 +19,7 @@ public class DbServer {
     server.setPort(9001);
     server.start();
 
-    DatabaseManager.main(new String[]{"-url", "jdbc:hsqldb:hsql://localhost:9001/jbpm"});
+    configuration.setProperty("hibernate.connection.url", "jdbc:hsqldb:hsql://localhost:9001/jbpm");
+    configuration.buildSessionFactory().getSchemaManager().exportMappedObjects(true);
   }
 }

@@ -50,7 +50,7 @@ public class PersistenceServiceFactoryDbTest extends AbstractJbpmTestCase {
     SessionFactory sessionFactory = persistenceServiceFactory.getSessionFactory();
     assertNotNull(sessionFactory);
     assertSame(sessionFactory, persistenceServiceFactory.sessionFactory);
-    assertNotNull(persistenceServiceFactory.sessionFactory.getClassMetadata(Token.class));
+    assertNotNull(persistenceServiceFactory.sessionFactory.getMetamodel().entity(Token.class));
   }
 
   public void testJndiDataSource() throws Exception {

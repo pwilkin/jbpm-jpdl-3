@@ -1,42 +1,45 @@
 package org.jbpm.persistence.db;
 
-import javax.transaction.Synchronization;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 
-import org.hibernate.HibernateException;
 import org.hibernate.Transaction;
 
-public class MockTransaction implements Transaction {
+/** records what happens to a hibernate transaction; the transaction is a dynamic proxy. */
+public class MockTransaction implements InvocationHandler {
 
   boolean wasCommitted = false;
   boolean wasRolledBack = false;
 
-  public void begin() throws HibernateException {
+  private Transaction transaction;
+
+  public Transaction createTransaction() {
+    if (transaction == null) {
+      transaction = (Transaction) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[] { Transaction.class }, this);
+    }
+    return transaction;
   }
 
-  public void commit() throws HibernateException {
-    wasCommitted = true;
+  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    String name = method.getName();
+    if (name.equals("commit")) {
+      wasCommitted = true;
+      return null;
+    } else if (name.equals("rollback")) {
+      wasRolledBack = true;
+      return null;
+    } else if (name.equals("isActive")) {
+      return !wasCommitted && !wasRolledBack;
+    } else if (name.equals("getRollbackOnly")) {
+      return false;
+    } else if (name.equals("equals")) {
+      return proxy == args[0];
+    } else if (name.equals("hashCode")) {
+      return System.identityHashCode(proxy);
+    } else if (name.equals("toString")) {
+      return "MockTransaction@" + Integer.toHexString(System.identityHashCode(proxy));
+    }
+    throw new UnsupportedOperationException(method.toString());
   }
-
-  public void rollback() throws HibernateException {
-    wasRolledBack = true;
-  }
-
-  public boolean wasCommitted() throws HibernateException {
-    return wasCommitted;
-  }
-
-  public boolean wasRolledBack() throws HibernateException {
-    return wasRolledBack;
-  }
-
-  public boolean isActive() throws HibernateException {
-    return (!wasCommitted) && (!wasRolledBack);
-  }
-
-  public void registerSynchronization(Synchronization synchronization) throws HibernateException {
-  }
-
-  public void setTimeout(int seconds) {
-  }
-
 }

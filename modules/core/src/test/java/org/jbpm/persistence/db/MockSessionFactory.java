@@ -1,33 +1,22 @@
 package org.jbpm.persistence.db;
 
-import java.io.Serializable;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.sql.Connection;
-import java.util.Map;
-import java.util.Set;
 
-import javax.naming.NamingException;
-import javax.naming.Reference;
-
-import org.hibernate.Cache;
-import org.hibernate.HibernateException;
-import org.hibernate.Interceptor;
+import org.hibernate.SessionBuilder;
 import org.hibernate.SessionFactory;
-import org.hibernate.StatelessSession;
-import org.hibernate.TypeHelper;
-import org.hibernate.UnknownProfileException;
-import org.hibernate.classic.Session;
-import org.hibernate.engine.FilterDefinition;
-import org.hibernate.metadata.ClassMetadata;
-import org.hibernate.metadata.CollectionMetadata;
-import org.hibernate.stat.Statistics;
-import org.hibernate.LobHelper;
 
-public class MockSessionFactory implements SessionFactory {
+/**
+ * hands out {@link MockSession}s. The session factory and the session builder returned by
+ * <code>withOptions()</code> are dynamic proxies; use {@link #createSessionFactory()}.
+ */
+public class MockSessionFactory implements InvocationHandler {
 
   private boolean failOnFlush;
   private boolean failOnClose;
-
-  private static final long serialVersionUID = 1L;
+  private SessionFactory sessionFactory;
 
   public void setFailOnFlush(boolean fail) {
     failOnFlush = fail;
@@ -37,135 +26,57 @@ public class MockSessionFactory implements SessionFactory {
     failOnClose = fail;
   }
 
-  public Session openSession(Connection connection) {
+  public SessionFactory createSessionFactory() {
+    if (sessionFactory == null) {
+      sessionFactory = (SessionFactory) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[] { SessionFactory.class }, this);
+    }
+    return sessionFactory;
+  }
+
+  Object openSession(Connection connection) {
     MockSession session = new MockSession(connection);
     session.setFailOnFlush(failOnFlush);
     session.setFailOnClose(failOnClose);
-    return session;
+    session.sessionFactory = sessionFactory;
+    return session.createSession();
   }
 
-  public Session openSession() throws HibernateException {
-    MockSession session = new MockSession();
-    session.setFailOnFlush(failOnFlush);
-    session.setFailOnClose(failOnClose);
-    return session;
+  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    String name = method.getName();
+    if (name.equals("openSession")) {
+      return openSession(null);
+    } else if (name.equals("withOptions")) {
+      return new SessionBuilderHandler().createSessionBuilder();
+    } else if (name.equals("getCurrentSession")) {
+      return null;
+    } else if (name.equals("isClosed")) {
+      return false;
+    } else if (name.equals("equals")) {
+      return proxy == args[0];
+    } else if (name.equals("hashCode")) {
+      return System.identityHashCode(proxy);
+    } else if (name.equals("toString")) {
+      return "MockSessionFactory";
+    }
+    throw new UnsupportedOperationException(method.toString());
   }
 
-  public Session getCurrentSession() throws HibernateException {
-    return null;
-  }
-  
-  ////////////////////////////
+  class SessionBuilderHandler implements InvocationHandler {
+    Connection connection;
 
-  public void close() throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
+    SessionBuilder createSessionBuilder() {
+      return (SessionBuilder) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[] { SessionBuilder.class }, this);
+    }
 
-  public Session openSession(Interceptor interceptor) throws HibernateException {
-    throw new UnsupportedOperationException();
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      String name = method.getName();
+      if (name.equals("connection")) {
+        connection = (Connection) args[0];
+        return proxy;
+      } else if (name.equals("openSession")) {
+        return MockSessionFactory.this.openSession(connection);
+      }
+      throw new UnsupportedOperationException(method.toString());
+    }
   }
-  public Session openSession(Connection connection, Interceptor interceptor) {
-    throw new UnsupportedOperationException();
-  }
-
-  public ClassMetadata getClassMetadata(Class persistentClass) throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
-
-  public ClassMetadata getClassMetadata(String entityName) throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
-
-  public CollectionMetadata getCollectionMetadata(String roleName) throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
-
-  public Map getAllClassMetadata() throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
-
-  public Map getAllCollectionMetadata() throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
-
-  public Statistics getStatistics() {
-    throw new UnsupportedOperationException();
-  }
-
-  public boolean isClosed() {
-    throw new UnsupportedOperationException();
-  }
-
-  public void evict(Class persistentClass) throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
-
-  public void evict(Class persistentClass, Serializable id) throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
-
-  public void evictEntity(String entityName) throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
-
-  public void evictEntity(String entityName, Serializable id) throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
-
-  public void evictCollection(String roleName) throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
-
-  public void evictCollection(String roleName, Serializable id) throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
-
-  public void evictQueries() throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
-
-  public void evictQueries(String cacheRegion) throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
-
-  public StatelessSession openStatelessSession() {
-    throw new UnsupportedOperationException();
-  }
-
-  public StatelessSession openStatelessSession(Connection connection) {
-    throw new UnsupportedOperationException();
-  }
-
-  public Set getDefinedFilterNames() {
-    throw new UnsupportedOperationException();
-  }
-
-  public FilterDefinition getFilterDefinition(String filterName) throws HibernateException {
-    throw new UnsupportedOperationException();
-  }
-
-  public Reference getReference() throws NamingException {
-    throw new UnsupportedOperationException();
-  }
-  
-  public TypeHelper getTypeHelper() {
-	throw new UnsupportedOperationException();
-  }
-  
-  public boolean containsFetchProfileDefinition(String name) {
-	  return false;
-  }
-  
-  public Cache getCache() {
-	  throw new UnsupportedOperationException();
-  }
-  
-  public void disableFetchProfile(String name) throws UnknownProfileException {
-	  throw new UnsupportedOperationException(); 
-  }
-  
-  public void enableFetchProfile(String name) throws UnknownProfileException {
-	  throw new UnsupportedOperationException(); 
-  }
-
 }

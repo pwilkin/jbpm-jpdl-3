@@ -4,7 +4,7 @@
 
     <!-- JDBC connection properties (begin) -->
     <property name="hibernate.connection.driver_class">org.hsqldb.jdbcDriver</property>
-    <property name="hibernate.connection.url">jdbc:hsqldb:mem:jbpm</property>
+    <property name="hibernate.connection.url">jdbc:hsqldb:mem:jbpm;hsqldb.tx=mvcc</property>
     <property name="hibernate.connection.username">sa</property>
     <property name="hibernate.connection.password"></property>
     <!-- JDBC connection properties (end) -->

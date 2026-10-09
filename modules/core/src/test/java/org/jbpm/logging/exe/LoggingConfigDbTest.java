@@ -1,6 +1,6 @@
 package org.jbpm.logging.exe;
 
-import org.hibernate.Query;
+import org.hibernate.query.Query;
 import org.jbpm.JbpmConfiguration;
 import org.jbpm.db.AbstractDbTestCase;
 import org.jbpm.graph.def.ProcessDefinition;

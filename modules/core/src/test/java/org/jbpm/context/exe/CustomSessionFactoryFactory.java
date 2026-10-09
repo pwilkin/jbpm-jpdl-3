@@ -23,7 +23,7 @@ package org.jbpm.context.exe;
 
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
-import org.jbpm.db.hibernate.HibernateHelper;
+import org.jbpm.db.JbpmSessionFactory;
 import org.jbpm.util.ClassLoaderUtil;
 
 public abstract class CustomSessionFactoryFactory {
@@ -31,9 +31,9 @@ public abstract class CustomSessionFactoryFactory {
   String extraClassMapping = null;
   
   public static SessionFactory createSessionFactory(String extraClassMapping) {
-    Configuration configuration = HibernateHelper.createConfiguration(null, null);
+    Configuration configuration = JbpmSessionFactory.createConfiguration(null);
     Class clazz = ClassLoaderUtil.loadClass(extraClassMapping);
     configuration.addClass(clazz);
-    return HibernateHelper.createSessionFactory(configuration, false);
+    return configuration.buildSessionFactory();
   }
 }

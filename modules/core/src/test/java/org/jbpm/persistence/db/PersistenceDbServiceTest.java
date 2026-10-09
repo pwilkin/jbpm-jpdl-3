@@ -5,24 +5,30 @@ import java.sql.Connection;
 import org.jbpm.AbstractJbpmTestCase;
 import org.jbpm.JbpmConfiguration;
 import org.jbpm.JbpmContext;
+import org.jbpm.svc.Services;
 
 public class PersistenceDbServiceTest extends AbstractJbpmTestCase {
 
   JbpmConfiguration jbpmConfiguration = null;
   JbpmContext jbpmContext = null;
   MockSessionFactory mockSessionFactory = null;
-  
+  DbPersistenceServiceFactory persistenceServiceFactory = null;
+
   protected void setUp() throws Exception
   {
     super.setUp();
     jbpmConfiguration = JbpmConfiguration.getInstance();
     jbpmContext = jbpmConfiguration.createJbpmContext();
+    persistenceServiceFactory = (DbPersistenceServiceFactory) jbpmContext.getServiceFactory(Services.SERVICENAME_PERSISTENCE);
     mockSessionFactory = new MockSessionFactory();
-    jbpmContext.setSessionFactory(mockSessionFactory);
+    jbpmContext.setSessionFactory(mockSessionFactory.createSessionFactory());
   }
 
   protected void tearDown() throws Exception
   {
+    // the mock session factory was set on the factory of the shared default configuration
+    persistenceServiceFactory.sessionFactory = null;
+    persistenceServiceFactory = null;
     jbpmConfiguration = null;
     jbpmContext = null;
     mockSessionFactory = null;
@@ -33,7 +39,7 @@ public class PersistenceDbServiceTest extends AbstractJbpmTestCase {
   // hibernate creates connections
 
   public void testDefaultCommit() {
-    MockSession mockSession = (MockSession) jbpmContext.getSession();
+    MockSession mockSession = MockSession.of(jbpmContext.getSession());
     assertNotNull(mockSession.transaction);
     jbpmContext.close();
 
@@ -44,7 +50,7 @@ public class PersistenceDbServiceTest extends AbstractJbpmTestCase {
   }
 
   public void testDefaultRollback() {
-    MockSession mockSession = (MockSession) jbpmContext.getSession();
+    MockSession mockSession = MockSession.of(jbpmContext.getSession());
     assertNotNull(mockSession.transaction);
     jbpmContext.setRollbackOnly();
     jbpmContext.close();
@@ -56,7 +62,7 @@ public class PersistenceDbServiceTest extends AbstractJbpmTestCase {
   }
   
   public void testDefaultCommitAfterGetConnection() {
-    MockSession mockSession = (MockSession) jbpmContext.getSession();
+    MockSession mockSession = MockSession.of(jbpmContext.getSession());
     assertNotNull(mockSession.transaction);
     jbpmContext.getConnection();
     jbpmContext.close();
@@ -68,7 +74,7 @@ public class PersistenceDbServiceTest extends AbstractJbpmTestCase {
   }
 
   public void testDefaultFollbackAfterGetConnection() {
-    MockSession mockSession = (MockSession) jbpmContext.getSession();
+    MockSession mockSession = MockSession.of(jbpmContext.getSession());
     assertNotNull(mockSession.transaction);
     jbpmContext.setRollbackOnly();
     jbpmContext.getConnection();
@@ -89,7 +95,7 @@ public class PersistenceDbServiceTest extends AbstractJbpmTestCase {
     Connection mockConnection = connectionHelper.createMockConnection();
     jbpmContext.setConnection(mockConnection);
 
-    MockSession mockSession = (MockSession) jbpmContext.getSession();
+    MockSession mockSession = MockSession.of(jbpmContext.getSession());
     assertNotNull(mockSession.transaction);
     jbpmContext.close();
 
@@ -109,7 +115,7 @@ public class PersistenceDbServiceTest extends AbstractJbpmTestCase {
     Connection mockConnection = connectionHelper.createMockConnection();
     jbpmContext.setConnection(mockConnection);
 
-    MockSession mockSession = (MockSession) jbpmContext.getSession();
+    MockSession mockSession = MockSession.of(jbpmContext.getSession());
     assertNotNull(mockSession.transaction);
     jbpmContext.setRollbackOnly();
     jbpmContext.close();
@@ -130,7 +136,7 @@ public class PersistenceDbServiceTest extends AbstractJbpmTestCase {
     Connection mockConnection = connectionHelper.createMockConnection();
     jbpmContext.setConnection(mockConnection);
 
-    MockSession mockSession = (MockSession) jbpmContext.getSession();
+    MockSession mockSession = MockSession.of(jbpmContext.getSession());
     assertNotNull(mockSession.transaction);
     jbpmContext.getConnection();
     jbpmContext.close();
@@ -151,7 +157,7 @@ public class PersistenceDbServiceTest extends AbstractJbpmTestCase {
     Connection mockConnection = connectionHelper.createMockConnection();
     jbpmContext.setConnection(mockConnection);
 
-    MockSession mockSession = (MockSession) jbpmContext.getSession();
+    MockSession mockSession = MockSession.of(jbpmContext.getSession());
     assertNotNull(mockSession.transaction);
     jbpmContext.getConnection();
     jbpmContext.setRollbackOnly();

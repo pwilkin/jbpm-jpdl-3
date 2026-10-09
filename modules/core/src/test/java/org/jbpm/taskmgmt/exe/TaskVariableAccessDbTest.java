@@ -2,9 +2,7 @@ package org.jbpm.taskmgmt.exe;
 
 import java.util.List;
 
-import org.hibernate.Criteria;
 import org.hibernate.Session;
-import org.hibernate.criterion.Restrictions;
 import org.jbpm.context.exe.ContextInstance;
 import org.jbpm.db.AbstractDbTestCase;
 import org.jbpm.graph.def.ProcessDefinition;
@@ -121,9 +119,9 @@ public class TaskVariableAccessDbTest extends AbstractDbTestCase {
 
   TaskInstance findTask(String taskName) {
     Session session = jbpmContext.getSession();
-    Criteria criteria = session.createCriteria(TaskInstance.class);
-    criteria.add(Restrictions.eq("name", taskName));
-    List taskInstances = criteria.list();
+    List taskInstances = session.createQuery("from org.jbpm.taskmgmt.exe.TaskInstance where name = :name", TaskInstance.class)
+        .setParameter("name", taskName)
+        .list();
     return (TaskInstance) taskInstances.get(0);
   }
 }

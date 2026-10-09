@@ -28,6 +28,7 @@ import org.jbpm.configuration.ConfigurationException;
 import org.jbpm.configuration.ObjectFactory;
 import org.jbpm.configuration.ObjectFactoryImpl;
 import org.jbpm.configuration.ObjectFactoryParser;
+import org.hibernate.SessionFactory;
 import org.jbpm.persistence.db.DbPersistenceServiceFactory;
 import org.jbpm.svc.Services;
 import org.jbpm.util.XmlException;
@@ -214,15 +215,21 @@ public class JbpmConfigurationTest extends AbstractJbpmTestCase {
   public void testJbpmConfigurationClose() {
     JbpmConfiguration jbpmConfiguration = JbpmConfiguration.getInstance();
     JbpmContext jbpmContext = jbpmConfiguration.createJbpmContext();
+    SessionFactory sessionFactory;
     try {
-      jbpmContext.getSession();
+      sessionFactory = jbpmContext.getSession().getSessionFactory();
     } finally {
       jbpmContext.close();
     }
     
     jbpmConfiguration.close();
-    
+    assertTrue(sessionFactory.isClosed());
+
+    // the factory releases the closed session factory and builds a new one on demand
     DbPersistenceServiceFactory dbPersistenceServiceFactory = (DbPersistenceServiceFactory) jbpmConfiguration.getServiceFactory(Services.SERVICENAME_PERSISTENCE);
-    assertTrue(dbPersistenceServiceFactory.getSessionFactory().isClosed());
+    SessionFactory rebuilt = dbPersistenceServiceFactory.getSessionFactory();
+    assertNotSame(sessionFactory, rebuilt);
+    assertFalse(rebuilt.isClosed());
+    dbPersistenceServiceFactory.close();
   }
 }

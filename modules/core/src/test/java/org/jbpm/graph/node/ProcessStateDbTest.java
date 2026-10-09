@@ -21,7 +21,6 @@
  */
 package org.jbpm.graph.node;
 
-import org.hibernate.criterion.Order;
 import org.jbpm.JbpmException;
 import org.jbpm.context.exe.ContextInstance;
 import org.jbpm.db.AbstractDbTestCase;
@@ -364,8 +363,7 @@ public class ProcessStateDbTest extends AbstractDbTestCase
 
       newTransaction();
 
-      ProcessStateLog processStateLog = (ProcessStateLog) session.createCriteria(ProcessStateLog.class)
-          .addOrder(Order.desc("enter"))
+      ProcessStateLog processStateLog = session.createQuery("from org.jbpm.graph.log.ProcessStateLog order by enter desc", ProcessStateLog.class)
           .setMaxResults(1)
           .uniqueResult();
 

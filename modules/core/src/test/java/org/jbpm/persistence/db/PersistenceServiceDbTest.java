@@ -27,6 +27,7 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.hibernate.Session;
+import org.hibernate.resource.transaction.spi.TransactionStatus;
 import org.hibernate.SessionFactory;
 import org.jbpm.AbstractJbpmTestCase;
 import org.jbpm.JbpmConfiguration;
@@ -40,7 +41,16 @@ import org.jbpm.svc.Services;
 public class PersistenceServiceDbTest extends AbstractJbpmTestCase {
   
   public void testDefaults() throws Exception {
-    JbpmConfiguration jbpmConfiguration = JbpmConfiguration.getInstance();
+    // a fresh configuration: the shared default instance may already have been used by other tests
+    JbpmConfiguration jbpmConfiguration = JbpmConfiguration.parseResource("jbpm.cfg.xml");
+    try {
+      checkDefaults(jbpmConfiguration);
+    } finally {
+      jbpmConfiguration.close();
+    }
+  }
+
+  private void checkDefaults(JbpmConfiguration jbpmConfiguration) throws Exception {
     JbpmContext jbpmContext = jbpmConfiguration.createJbpmContext();
     
     DbPersistenceServiceFactory persistenceServiceFactory = null;
@@ -56,7 +66,6 @@ public class PersistenceServiceDbTest extends AbstractJbpmTestCase {
       assertNull(persistenceServiceFactory.configuration);
       assertNull(persistenceServiceFactory.dataSource);
       assertNull(persistenceServiceFactory.dataSourceJndiName);
-      assertNull(persistenceServiceFactory.schemaExport);
       assertNull(persistenceServiceFactory.sessionFactory);
       assertNull(persistenceServiceFactory.sessionFactoryJndiName);
       assertNull(persistenceService.session);
@@ -81,7 +90,6 @@ public class PersistenceServiceDbTest extends AbstractJbpmTestCase {
 
       assertNull(persistenceServiceFactory.dataSource);
       assertNull(persistenceServiceFactory.dataSourceJndiName);
-      assertNull(persistenceServiceFactory.schemaExport);
       assertNull(persistenceServiceFactory.sessionFactoryJndiName);
       assertNull(persistenceService.contextSession);
       assertNull(persistenceService.graphSession);
@@ -91,8 +99,8 @@ public class PersistenceServiceDbTest extends AbstractJbpmTestCase {
       
       assertTrue(persistenceService.transaction.isActive());
       assertTrue(persistenceService.session.isOpen());
-      assertFalse(persistenceService.transaction.wasCommitted());
-      assertFalse(persistenceService.transaction.wasRolledBack());
+      assertFalse((persistenceService.transaction.getStatus() == TransactionStatus.COMMITTED));
+      assertFalse((persistenceService.transaction.getStatus() == TransactionStatus.ROLLED_BACK));
 
     } finally {
       jbpmContext.close();
@@ -101,9 +109,9 @@ public class PersistenceServiceDbTest extends AbstractJbpmTestCase {
     assertNotNull(persistenceServiceFactory.configuration);
     assertNotNull(persistenceServiceFactory.sessionFactory);
 
-    assertTrue(persistenceService.transaction.wasCommitted());
+    assertTrue((persistenceService.transaction.getStatus() == TransactionStatus.COMMITTED));
     assertFalse(persistenceService.transaction.isActive());
-    assertFalse(persistenceService.transaction.wasRolledBack());
+    assertFalse((persistenceService.transaction.getStatus() == TransactionStatus.ROLLED_BACK));
     assertFalse(persistenceService.session.isOpen());
     assertFalse(persistenceService.session.isConnected());
   }
@@ -138,9 +146,9 @@ public class PersistenceServiceDbTest extends AbstractJbpmTestCase {
       jbpmContext.close();
     }
 
-    assertFalse(persistenceService.transaction.wasCommitted());
+    assertFalse((persistenceService.transaction.getStatus() == TransactionStatus.COMMITTED));
     assertFalse(persistenceService.transaction.isActive());
-    assertTrue(persistenceService.transaction.wasRolledBack());
+    assertTrue((persistenceService.transaction.getStatus() == TransactionStatus.ROLLED_BACK));
     assertFalse(persistenceService.session.isOpen());
   }
   
@@ -246,7 +254,7 @@ public class PersistenceServiceDbTest extends AbstractJbpmTestCase {
       
       DataSource dataSource = Jdbc.createRecordedDataSource();
       Connection connection = dataSource.getConnection();
-      Session session = sessionFactory.openSession(connection);
+      Session session = sessionFactory.withOptions().connection(connection).openSession();
 
       jbpmContext.setSession(session);
       jbpmContext.setRollbackOnly();

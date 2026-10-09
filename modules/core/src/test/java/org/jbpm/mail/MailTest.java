@@ -1,7 +1,10 @@
 package org.jbpm.mail;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import junit.extensions.TestSetup;
 import junit.framework.Test;
@@ -63,31 +66,28 @@ public class MailTest extends AbstractJbpmTestCase
 
   static SimpleSmtpServer startSmtpServer(int port)
   {
-    /*
-     * SimpleSmtpServer.start(int) blocks the calling thread until the server socket is created. If the socket is
-     * created too quickly (seems to happen on Linux and Mac) then the notification is sent too early and the calling
-     * thread blocks forever.
-     * 
-     * The code below corresponds to SimpleSmtpServer.start(int) except that the thread start has been moved inside of
-     * the synchronized block.
-     */
-    SimpleSmtpServer server = new SimpleSmtpServer(port);
-    Thread serverThread = new Thread(server);
-
-    // Block until the server socket is created
-    synchronized (server)
+    try
     {
-      serverThread.start();
-      try
+      return SimpleSmtpServer.start(port);
+    }
+    catch (IOException e)
+    {
+      throw new RuntimeException("couldn't start smtp server on port " + port, e);
+    }
+  }
+
+  /** the addresses in a header, whether the server keeps them as one comma-separated value or several */
+  static List<String> getAddresses(SmtpMessage email, String header)
+  {
+    List<String> addresses = new ArrayList<String>();
+    for (String value : email.getHeaderValues(header))
+    {
+      for (String address : value.split(","))
       {
-        server.wait(10 * 1000);
-      }
-      catch (InterruptedException e)
-      {
-        // Ignore don't care.
+        addresses.add(address.trim());
       }
     }
-    return server;
+    return addresses;
   }
 
   public void testWithoutAddressResolving()
@@ -99,10 +99,9 @@ public class MailTest extends AbstractJbpmTestCase
     Mail mail = new Mail(null, null, to, subject, text);
     mail.send();
 
-    assertTrue(server.getReceivedEmailSize() == 1);
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage)emailIter.next();
-    emailIter.remove();
+    assertTrue(server.getReceivedEmails().size() == 1);
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
     assertEquals("latest news", email.getHeaderValue("Subject"));
     assertEquals("roy is assurancetourix", email.getBody());
@@ -118,10 +117,9 @@ public class MailTest extends AbstractJbpmTestCase
     Mail mail = new Mail(null, actors, null, subject, text);
     mail.send();
 
-    assertTrue(server.getReceivedEmailSize() == 1);
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage)emailIter.next();
-    emailIter.remove();
+    assertTrue(server.getReceivedEmails().size() == 1);
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
     assertEquals("latest news", email.getHeaderValue("Subject"));
     assertEquals("roy is assurancetourix", email.getBody());
@@ -137,10 +135,9 @@ public class MailTest extends AbstractJbpmTestCase
     Mail mail = new Mail(null, null, null, null, bcc, subject, text);
     mail.send();
 
-    assertEquals(1, server.getReceivedEmailSize());
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage)emailIter.next();
-    emailIter.remove();
+    assertEquals(1, server.getReceivedEmails().size());
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
     assertEquals("latest news", email.getHeaderValue("Subject"));
     assertEquals("roy is assurancetourix", email.getBody());
@@ -163,10 +160,9 @@ public class MailTest extends AbstractJbpmTestCase
     ProcessInstance processInstance = new ProcessInstance(processDefinition);
     processInstance.signal();
 
-    assertTrue(server.getReceivedEmailSize() == 1);
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage)emailIter.next();
-    emailIter.remove();
+    assertTrue(server.getReceivedEmails().size() == 1);
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
     assertEquals("readmylips", email.getHeaderValue("Subject"));
     assertEquals("nomoretaxes", email.getBody());
@@ -191,10 +187,9 @@ public class MailTest extends AbstractJbpmTestCase
     ProcessInstance processInstance = new ProcessInstance(processDefinition);
     processInstance.signal();
 
-    assertTrue(server.getReceivedEmailSize() == 1);
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage)emailIter.next();
-    emailIter.remove();
+    assertTrue(server.getReceivedEmails().size() == 1);
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
     assertEquals("readmylips", email.getHeaderValue("Subject"));
     assertEquals("nomoretaxes", email.getBody());
@@ -216,10 +211,9 @@ public class MailTest extends AbstractJbpmTestCase
     ProcessInstance processInstance = new ProcessInstance(processDefinition);
     processInstance.signal();
 
-    assertTrue(server.getReceivedEmailSize() == 1);
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage)emailIter.next();
-    emailIter.remove();
+    assertTrue(server.getReceivedEmails().size() == 1);
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
     assertEquals("readmylips", email.getHeaderValue("Subject"));
     assertEquals("nomoretaxes", email.getBody());
@@ -245,10 +239,9 @@ public class MailTest extends AbstractJbpmTestCase
     ProcessInstance processInstance = new ProcessInstance(processDefinition);
     processInstance.signal();
 
-    assertTrue(server.getReceivedEmailSize() == 1);
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage)emailIter.next();
-    emailIter.remove();
+    assertTrue(server.getReceivedEmails().size() == 1);
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
     assertEquals("readmylips", email.getHeaderValue("Subject"));
     assertEquals("nomoretaxes", email.getBody());
@@ -270,15 +263,13 @@ public class MailTest extends AbstractJbpmTestCase
     ProcessInstance processInstance = new ProcessInstance(processDefinition);
     processInstance.signal();
 
-    assertEquals(1, server.getReceivedEmailSize());
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage)emailIter.next();
-    emailIter.remove();
+    assertEquals(1, server.getReceivedEmails().size());
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
     assertEquals("readmylips", email.getHeaderValue("Subject"));
     assertEquals("nomoretaxes", email.getBody());
-    assertEquals(Arrays.asList(new String[] { "george@example.domain", "barbara@example.domain", "suzy@example.domain" }), Arrays.asList(email
-        .getHeaderValues("To")));
+    assertEquals(Arrays.asList(new String[] { "george@example.domain", "barbara@example.domain", "suzy@example.domain" }), getAddresses(email, "To"));
   }
 
   public void testMailWithoutAddressResolving() 
@@ -296,12 +287,11 @@ public class MailTest extends AbstractJbpmTestCase
     ProcessInstance processInstance = new ProcessInstance(processDefinition);
     processInstance.signal();
 
-    assertEquals(1, server.getReceivedEmailSize());
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage)emailIter.next();
-    emailIter.remove();
+    assertEquals(1, server.getReceivedEmails().size());
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
-    assertEquals(Arrays.asList(new String[] { "george@humpydumpy.gov", "spiderman@hollywood.ca.us" }), Arrays.asList(email.getHeaderValues("To")));
+    assertEquals(Arrays.asList(new String[] { "george@humpydumpy.gov", "spiderman@hollywood.ca.us" }), getAddresses(email, "To"));
   }
 
   public void testToVariableExpression() 
@@ -323,10 +313,9 @@ public class MailTest extends AbstractJbpmTestCase
     processInstance.getContextInstance().setVariable("user", mrNobody);
     processInstance.signal();
 
-    assertEquals(1, server.getReceivedEmailSize());
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage)emailIter.next();
-    emailIter.remove();
+    assertEquals(1, server.getReceivedEmails().size());
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
     assertEquals("hucklebuck@example.domain", email.getHeaderValue("To"));
   }
@@ -351,10 +340,9 @@ public class MailTest extends AbstractJbpmTestCase
     processInstance.getTaskMgmtInstance().addSwimlaneInstance(initiatorInstance);
     processInstance.signal();
 
-    assertEquals(1, server.getReceivedEmailSize());
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage)emailIter.next();
-    emailIter.remove();
+    assertEquals(1, server.getReceivedEmails().size());
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
     assertEquals("huckelberry@example.domain", email.getHeaderValue("To"));
   }
@@ -376,10 +364,9 @@ public class MailTest extends AbstractJbpmTestCase
     processInstance.getContextInstance().setVariable("item", "cookies");
     processInstance.signal();
 
-    assertEquals(1, server.getReceivedEmailSize());
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage)emailIter.next();
-    emailIter.remove();
+    assertEquals(1, server.getReceivedEmails().size());
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
     assertEquals("your cookies order", email.getHeaderValue("Subject"));
   }
@@ -401,10 +388,9 @@ public class MailTest extends AbstractJbpmTestCase
     processInstance.getContextInstance().setVariable("item", "cookies");
     processInstance.signal();
 
-    assertEquals(1, server.getReceivedEmailSize());
-    Iterator emailIter = server.getReceivedEmail();
-    SmtpMessage email = (SmtpMessage)emailIter.next();
-    emailIter.remove();
+    assertEquals(1, server.getReceivedEmails().size());
+    SmtpMessage email = server.getReceivedEmails().get(0);
+    server.reset();
     
     assertEquals("your cookies order", email.getBody());
   }

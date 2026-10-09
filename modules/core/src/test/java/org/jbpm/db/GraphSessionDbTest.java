@@ -443,7 +443,7 @@ public class GraphSessionDbTest extends AbstractDbTestCase {
   }
 
   private void ensureCleanProcessDefinitionTable() {
-    List processDefinitions = session.createCriteria(ProcessDefinition.class).list();
+    List processDefinitions = session.createQuery("from org.jbpm.graph.def.ProcessDefinition", ProcessDefinition.class).list();
     if (!processDefinitions.isEmpty()) {
       System.err.println("FIXME: "+ getClass().getName() + "." + getName() +
           " found " + processDefinitions.size() + " process definitions left over");

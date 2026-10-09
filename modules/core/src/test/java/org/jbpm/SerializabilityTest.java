@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.jbpm.file.def.FileDefinitionFileSystemConfigTest;
 import org.jbpm.util.ClassLoaderUtil;
@@ -39,9 +40,15 @@ public class SerializabilityTest extends AbstractJbpmTestCase {
   static Set excusedClasses = new HashSet(Arrays.asList(new String[] {
       "org.jbpm.ant",
       "org.jbpm.context.exe.JbpmType",
+      "org.jbpm.db.hibernate.AccessType",
       "org.jbpm.db.hibernate.ConverterEnumType",
       "org.jbpm.db.hibernate.Converters",
+      "org.jbpm.db.hibernate.HibernateHelper",
       "org.jbpm.db.hibernate.JbpmNamingStrategy",
+      "org.jbpm.db.hibernate.StringMax",
+      "org.jbpm.db.MetadataSourceDescriptor",
+      "org.jbpm.db.ScriptTargetDescriptor",
+      "org.jbpm.db.StringWriterScriptTargetOutput",
       "org.jbpm.db.jmx.JbpmService",
       "org.jbpm.db.AbstractDbTestCase",
       "org.jbpm.db.ContextSession",
@@ -112,9 +119,14 @@ public class SerializabilityTest extends AbstractJbpmTestCase {
       "org.jbpm.EventCallback$1"
   }));
 
+  private final Set nonSerializableClasses = new TreeSet();
+
   public void testForNonSerializableClasses() {
     File jbpmRoot = new File(testRootDir+"../classes/");
     scanForClasses(jbpmRoot, "");
+    if (!nonSerializableClasses.isEmpty()) {
+      fail("NOT Serializable: " + nonSerializableClasses);
+    }
   }
   
   private void scanForClasses(File rootClassDir, String packageDir) {
@@ -147,7 +159,7 @@ public class SerializabilityTest extends AbstractJbpmTestCase {
              || clazz.getConstructors().length == 0
            )
        ) {
-      fail(className+" is NOT Serializable");
+      nonSerializableClasses.add(className);
     }
   }
 
