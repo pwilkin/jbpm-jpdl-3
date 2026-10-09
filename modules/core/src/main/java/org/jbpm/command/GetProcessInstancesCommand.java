@@ -68,7 +68,7 @@ public class GetProcessInstancesCommand extends AbstractGetObjectBaseCommand
 
     if (onlyRunning)
     {
-      queryText.append(getConcatExpression()).append(" pi.end = null");
+      queryText.append(getConcatExpression()).append(" pi.end is null");
     }
 
     if (fromStartDate != null)

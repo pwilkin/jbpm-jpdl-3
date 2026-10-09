@@ -92,7 +92,7 @@
       select pi
       from org.jbpm.graph.exe.ProcessInstance as pi
       where pi.processDefinition.name = :processDefinitionName
-        and pi.end = null
+        and pi.end is null
       order by pi.start desc
     ]]>
   </query>
@@ -110,7 +110,7 @@
     <![CDATA[
       select pi
       from org.jbpm.graph.exe.ProcessInstance as pi
-      where pi.end = null
+      where pi.end is null
       order by pi.start desc
     ]]>
   </query>
@@ -127,7 +127,7 @@
     <![CDATA[
       select pi
       from org.jbpm.graph.exe.ProcessInstance as pi
-      where pi.superProcessToken!=null
+      where pi.superProcessToken is not null
       and pi.superProcessToken.processInstance = :processInstance
       order by pi.start desc
     ]]>
@@ -212,12 +212,9 @@
 
   <query name="GraphSession.findActiveNodesByProcessInstance">
     <![CDATA[
-      select node
-      from org.jbpm.graph.def.Node node,
-           org.jbpm.graph.exe.Token token,
-           org.jbpm.graph.exe.ProcessInstance processInstance
+      select token.node
+      from org.jbpm.graph.exe.Token token
       where token.processInstance = :processInstance
-        and token.node = node
         and token.isSuspended != true
         and token.parent is not null
         and token.end is null
@@ -403,8 +400,8 @@
       from org.jbpm.taskmgmt.exe.PooledActor pooledActor
       join pooledActor.taskInstances ti
       where pooledActor.actorId = :swimlaneActorId
-      and ti.actorId != null
-      and ti.end = null
+      and ti.actorId is not null
+      and ti.end is null
       and ti.isCancelled = false
     ]]>
   </query>  
