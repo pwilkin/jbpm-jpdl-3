@@ -99,7 +99,7 @@ public class JbpmSession {
 
   public Connection getConnection() {
     try {
-      return session.connection();
+      return ((org.hibernate.engine.spi.SessionImplementor) session).connection();
     } catch (Exception e) {
       log.error(e);
       handleException();

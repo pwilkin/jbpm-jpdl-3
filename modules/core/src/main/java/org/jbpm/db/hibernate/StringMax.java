@@ -13,14 +13,14 @@ public class StringMax extends StringType implements org.hibernate.usertype.Para
   
   int length = 4000;
 
-  public void set(PreparedStatement st, String value, int index) throws SQLException {
+  public void set(PreparedStatement st, String value, int index, org.hibernate.engine.spi.SharedSessionContractImplementor session) throws SQLException {
     String string = (String)value;
     if ( (value!=null)
          && (string.length()>length)
        ) {
       value = string.substring(0, length);
     }
-    super.set(st, value, index);
+    super.set(st, value, index, session);
   }
 
   public void setParameterValues(Properties parameters) {

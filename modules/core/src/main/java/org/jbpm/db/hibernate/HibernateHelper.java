@@ -33,6 +33,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.boot.Metadata;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.jbpm.util.ClassLoaderUtil;
 
@@ -110,7 +113,23 @@ public class HibernateHelper {
   }
 
   public static SchemaExport createSchemaExport(SessionFactory sessionFactory) {
-    return new SchemaExport(getConfiguration(sessionFactory));
+    return new SchemaExport();
+  }
+
+  /**
+   * builds a service registry from the configuration's own registry builder, which holds the
+   * mapping entries of the configured hibernate.cfg.xml (Hibernate 5 dropped Configuration's own mapping model).
+   */
+  public static StandardServiceRegistry buildServiceRegistry(Configuration configuration) {
+    return configuration.getStandardServiceRegistryBuilder().applySettings(configuration.getProperties()).build();
+  }
+
+  public static Metadata buildMetadata(StandardServiceRegistry serviceRegistry) {
+    return new MetadataSources(serviceRegistry).buildMetadata();
+  }
+
+  public static Metadata buildMetadata(Configuration configuration) {
+    return buildMetadata(buildServiceRegistry(configuration));
   }
 
   public static boolean createSchemaExportScript(SessionFactory sessionFactory) {
@@ -123,21 +142,7 @@ public class HibernateHelper {
   }
 
   public static void clearHibernateCache(SessionFactory sessionFactory) {
-    sessionFactory.evictQueries();
-
-    Map classMetadata = sessionFactory.getAllClassMetadata();
-    Iterator iter = classMetadata.keySet().iterator();
-    while (iter.hasNext()) {
-      String entityName = (String) iter.next();
-      sessionFactory.evictEntity(entityName);
-    }
-
-    Map collectionMetadata = sessionFactory.getAllCollectionMetadata();
-    iter = collectionMetadata.keySet().iterator();
-    while (iter.hasNext()) {
-      String collectionName = (String) iter.next();
-      sessionFactory.evictCollection(collectionName);
-    }
+    sessionFactory.getCache().evictAllRegions();
   }
 
   static Properties loadPropertiesFromResource(String resource) {

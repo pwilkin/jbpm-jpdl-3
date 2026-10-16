@@ -42,15 +42,17 @@ import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.hibernate.boot.Metadata;
+import org.hibernate.boot.registry.StandardServiceRegistry;
+import org.hibernate.boot.spi.MetadataImplementor;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.cfg.Settings;
-import org.hibernate.connection.ConnectionProvider;
 import org.hibernate.dialect.Dialect;
-import org.hibernate.engine.Mapping;
+import org.hibernate.engine.jdbc.connections.spi.ConnectionProvider;
 import org.hibernate.mapping.ForeignKey;
 import org.hibernate.mapping.Table;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
-import org.hibernate.util.JDBCExceptionReporter;
+import org.hibernate.tool.schema.TargetType;
+import org.jbpm.db.hibernate.HibernateHelper;
 import org.jbpm.JbpmException;
 
 /**
@@ -62,8 +64,8 @@ public class JbpmSchema implements Serializable
   private static final long serialVersionUID = 1L;
 
   Configuration configuration = null;
-  Settings settings;
-  Mapping mapping = null;
+  transient StandardServiceRegistry serviceRegistry = null;
+  transient Metadata metadata = null;
   String[] createSql = null;
   String[] dropSql = null;
   String[] cleanSql = null;
@@ -75,15 +77,80 @@ public class JbpmSchema implements Serializable
   public JbpmSchema(Configuration configuration)
   {
     this.configuration = configuration;
-    this.settings = configuration.buildSettings();
-    this.mapping = configuration.buildMapping();
+  }
+
+  synchronized Metadata getMetadata()
+  {
+    if (metadata == null)
+    {
+      serviceRegistry = HibernateHelper.buildServiceRegistry(configuration);
+      metadata = HibernateHelper.buildMetadata(serviceRegistry);
+    }
+    return metadata;
+  }
+
+  Dialect getDialect()
+  {
+    return getMetadata().getDatabase().getDialect();
+  }
+
+  Iterator getTableMappings()
+  {
+    return getMetadata().collectTableMappings().iterator();
+  }
+
+  /** runs SchemaExport into a temporary script file and returns its statements */
+  String[] generateScript(boolean create)
+  {
+    try
+    {
+      File file = File.createTempFile("jbpm-schema", ".sql");
+      try
+      {
+        SchemaExport schemaExport = new SchemaExport();
+        schemaExport.setOutputFile(file.getAbsolutePath());
+        schemaExport.setDelimiter(";");
+        schemaExport.setFormat(false);
+        if (create)
+          schemaExport.createOnly(java.util.EnumSet.of(TargetType.SCRIPT), getMetadata());
+        else
+          schemaExport.drop(java.util.EnumSet.of(TargetType.SCRIPT), getMetadata());
+        List statements = new ArrayList();
+        java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(file));
+        try
+        {
+          String line;
+          while ((line = reader.readLine()) != null)
+          {
+            line = line.trim();
+            if (line.endsWith(";"))
+              line = line.substring(0, line.length() - 1);
+            if (line.length() > 0)
+              statements.add(line);
+          }
+        }
+        finally
+        {
+          reader.close();
+        }
+        return (String[])statements.toArray(new String[statements.size()]);
+      }
+      finally
+      {
+        file.delete();
+      }
+    }
+    catch (IOException e)
+    {
+      throw new JbpmException("couldn't generate schema script", e);
+    }
   }
 
   public String[] getCreateSql()
   {
     if (createSql == null)
     {
-      createSql = configuration.generateSchemaCreationScript(settings.getDialect());
+      createSql = generateScript(true);
     }
     return createSql;
   }
@@ -92,7 +159,7 @@ public class JbpmSchema implements Serializable
   {
     if (dropSql == null)
     {
-      dropSql = configuration.generateDropSchemaScript(settings.getDialect());
+      dropSql = generateScript(false);
     }
     return dropSql;
   }
@@ -101,16 +168,15 @@ public class JbpmSchema implements Serializable
   {
     if (cleanSql == null)
     {
-      new SchemaExport(configuration);
 
-      Dialect dialect = settings.getDialect();
-      String catalog = settings.getDefaultCatalogName();
-      String schema = settings.getDefaultSchemaName();
+      Dialect dialect = getDialect();
+      String catalog = configuration.getProperty("hibernate.default_catalog");
+      String schema = configuration.getProperty("hibernate.default_schema");
 
       // loop over all foreign key constraints
       List dropForeignKeysSql = new ArrayList();
       List createForeignKeysSql = new ArrayList();
-      Iterator iter = configuration.getTableMappings();
+      Iterator iter = getTableMappings();
       while (iter.hasNext())
       {
         Table table = (Table)iter.next();
@@ -128,7 +194,7 @@ public class JbpmSchema implements Serializable
               dropForeignKeysSql.add(sqlDropString);
 
               // and collect the create foreign key constraint sql
-              String sqlCreateString = fk.sqlCreateString(dialect, mapping, catalog, schema);
+              String sqlCreateString = fk.sqlCreateString(dialect, (MetadataImplementor) getMetadata(), catalog, schema);
               createForeignKeysSql.add(sqlCreateString);
             }
           }
@@ -136,7 +202,7 @@ public class JbpmSchema implements Serializable
       }
 
       List deleteSql = new ArrayList();
-      iter = configuration.getTableMappings();
+      iter = getTableMappings();
       while (iter.hasNext())
       {
         Table table = (Table)iter.next();
@@ -167,7 +233,7 @@ public class JbpmSchema implements Serializable
   {
     // delete all the data in the jbpm tables
     List jbpmTableNames = new ArrayList();
-    Iterator iter = configuration.getTableMappings();
+    Iterator iter = getTableMappings();
     while (iter.hasNext())
     {
       Table table = (Table)iter.next();
@@ -237,7 +303,7 @@ public class JbpmSchema implements Serializable
       saveSqlScript(dir + "/" + prefix + ".drop.sql", getDropSql());
       saveSqlScript(dir + "/" + prefix + ".create.sql", getCreateSql());
       saveSqlScript(dir + "/" + prefix + ".clean.sql", getCleanSql());
-      new SchemaExport(configuration).setDelimiter(getSqlDelimiter()).setOutputFile(dir + "/" + prefix + ".drop.create.sql").create(true, false);
+      new SchemaExport().setDelimiter(getSqlDelimiter()).setOutputFile(dir + "/" + prefix + ".drop.create.sql").create(java.util.EnumSet.of(TargetType.SCRIPT), getMetadata());
     }
     catch (IOException e)
     {
@@ -382,10 +448,8 @@ public class JbpmSchema implements Serializable
     {
       try
       {
-        JDBCExceptionReporter.logWarnings(connection.getWarnings());
         connection.clearWarnings();
         connectionProvider.closeConnection(connection);
-        connectionProvider.close();
       }
       catch (SQLException e)
       {
@@ -396,7 +460,8 @@ public class JbpmSchema implements Serializable
 
   void createConnection() throws SQLException
   {
-    connectionProvider = settings.getConnectionProvider();
+    getMetadata();
+    connectionProvider = serviceRegistry.getService(ConnectionProvider.class);
     connection = connectionProvider.getConnection();
     if (!connection.getAutoCommit())
     {

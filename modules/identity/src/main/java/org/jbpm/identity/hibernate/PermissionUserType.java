@@ -30,7 +30,7 @@ import java.sql.SQLException;
 
 import org.hibernate.type.StandardBasicTypes;
 import org.hibernate.HibernateException;
-import org.hibernate.engine.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.type.Type;
 import org.hibernate.usertype.CompositeUserType;
 
@@ -76,7 +76,7 @@ public class PermissionUserType implements CompositeUserType {
   }
   
   private static final Class[] NAME_ACTIOS_CONSTRUCTOR_PARAMETER_TYPES = new Class[]{String.class, String.class};
-  public Object nullSafeGet(ResultSet resultSet, String[] names, SessionImplementor session, Object owner) throws HibernateException, SQLException {
+  public Object nullSafeGet(ResultSet resultSet, String[] names, SharedSessionContractImplementor session, Object owner) throws HibernateException, SQLException {
     Object permission = null;
     String className = resultSet.getString(names[0]);
     String name = resultSet.getString(names[1]);
@@ -94,7 +94,7 @@ public class PermissionUserType implements CompositeUserType {
     return permission;
   }
 
-  public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index, SessionImplementor session) throws HibernateException, SQLException {
+  public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index, SharedSessionContractImplementor session) throws HibernateException, SQLException {
     Permission permission = (Permission) value;
     preparedStatement.setString(index, permission.getClass().getName());
     preparedStatement.setString(index+1, permission.getName());
@@ -109,15 +109,15 @@ public class PermissionUserType implements CompositeUserType {
     return false;
   }
 
-  public Serializable disassemble(Object value, SessionImplementor session) throws HibernateException {
+  public Serializable disassemble(Object value, SharedSessionContractImplementor session) throws HibernateException {
     return (Serializable) value;
   }
 
-  public Object assemble(Serializable cached, SessionImplementor session, Object owner) throws HibernateException {
+  public Object assemble(Serializable cached, SharedSessionContractImplementor session, Object owner) throws HibernateException {
     return cached;
   }
 
-  public Object replace(Object original, Object target, SessionImplementor session, Object owner) throws HibernateException {
+  public Object replace(Object original, Object target, SharedSessionContractImplementor session, Object owner) throws HibernateException {
     return original;
   }
 }

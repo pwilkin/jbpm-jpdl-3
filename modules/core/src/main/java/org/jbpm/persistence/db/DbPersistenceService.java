@@ -108,7 +108,7 @@ public class DbPersistenceService implements Service, PersistenceService {
         mustConnectionBeClosed = false;
       } else if (connection!=null) {
         log.debug("creating hibernate session with connection "+connection);
-        session = getSessionFactory().openSession(connection);
+        session = getSessionFactory().withOptions().connection(connection).openSession();
         mustSessionBeClosed = true;
         mustSessionBeFlushed = true;
         mustConnectionBeClosed = false;
@@ -188,7 +188,7 @@ public class DbPersistenceService implements Service, PersistenceService {
           getSession();
         }
         if (session!=null) {
-          connection = session.connection();
+          connection = ((org.hibernate.engine.spi.SessionImplementor) session).connection();
           log.debug("fetching connection from hibernate session. this transfers responsibility for closing the jdbc connection to the user! "+connection);
           mustConnectionBeClosed = false;
         }

@@ -194,7 +194,7 @@ public class JbpmSessionFactory implements Serializable {
       } else {
         // use the client provided jdbc connection in  
         // the created hibernate session.
-        session = getSessionFactory().openSession(jdbcConnection);
+        session = getSessionFactory().withOptions().connection(jdbcConnection).openSession();
       }
       
       dbSession = new JbpmSession( this, session );
@@ -261,7 +261,7 @@ public class JbpmSessionFactory implements Serializable {
   void initHibernatableClasses() {
     hibernatableLongIdClasses = new HashSet();
     hibernatableStringIdClasses = new HashSet();
-    Iterator iter = configuration.getClassMappings();
+    Iterator iter = org.jbpm.db.hibernate.HibernateHelper.buildMetadata(configuration).getEntityBindings().iterator();
     while (iter.hasNext()) {
       PersistentClass persistentClass = (PersistentClass) iter.next();
       if (LongType.class==persistentClass.getIdentifier().getType().getClass()) {

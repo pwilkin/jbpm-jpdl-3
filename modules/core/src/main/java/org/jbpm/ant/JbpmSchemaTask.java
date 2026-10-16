@@ -33,7 +33,10 @@ import org.apache.tools.ant.Task;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 import org.hibernate.tool.hbm2ddl.SchemaUpdate;
-import org.hibernate.util.ConfigHelper;
+import org.hibernate.boot.Metadata;
+import org.hibernate.internal.util.ConfigHelper;
+import org.hibernate.tool.schema.TargetType;
+import org.jbpm.db.hibernate.HibernateHelper;
 
 public class JbpmSchemaTask extends Task
 {
@@ -58,13 +61,13 @@ public class JbpmSchemaTask extends Task
       if ("drop".equalsIgnoreCase(action))
       {
         SchemaExport schemaExport = getSchemaExport(configuration);
-        schemaExport.execute(false, false, true, false);
+        schemaExport.drop(getScriptTargets(), HibernateHelper.buildMetadata(configuration));
         exceptions = schemaExport.getExceptions();
       }
       else if ("create".equalsIgnoreCase(action))
       {
         SchemaExport schemaExport = getSchemaExport(configuration);
-        schemaExport.execute(false, false, false, true);
+        schemaExport.createOnly(getScriptTargets(), HibernateHelper.buildMetadata(configuration));
         exceptions = schemaExport.getExceptions();
       }
       else if ("update".equalsIgnoreCase(action))
@@ -78,7 +81,7 @@ public class JbpmSchemaTask extends Task
             System.setOut(prstr);
           }
           SchemaUpdate schemaUpdate = getSchemaUpdate(configuration);
-          schemaUpdate.execute(true, false);
+          schemaUpdate.execute(java.util.EnumSet.of(TargetType.STDOUT), HibernateHelper.buildMetadata(configuration));
           exceptions = schemaUpdate.getExceptions();
         }
         finally
@@ -120,9 +123,15 @@ public class JbpmSchemaTask extends Task
     return configuration;
   }
 
+  /** Hibernate 3 execute(script=false, export=false, ...) only wrote the output file */
+  private java.util.EnumSet<TargetType> getScriptTargets()
+  {
+    return output != null ? java.util.EnumSet.of(TargetType.SCRIPT) : java.util.EnumSet.noneOf(TargetType.class);
+  }
+
   private SchemaExport getSchemaExport(Configuration configuration)
   {
-    SchemaExport schemaExport = new SchemaExport(configuration);
+    SchemaExport schemaExport = new SchemaExport();
 
     if (output != null)
       schemaExport.setOutputFile(output);
@@ -136,7 +145,7 @@ public class JbpmSchemaTask extends Task
 
   private SchemaUpdate getSchemaUpdate(Configuration configuration)
   {
-    SchemaUpdate schemaUpdate = new SchemaUpdate(configuration);
+    SchemaUpdate schemaUpdate = new SchemaUpdate();
     return schemaUpdate;
   }
 

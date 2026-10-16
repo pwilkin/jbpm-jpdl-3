@@ -83,7 +83,7 @@ public class DbPersistenceServiceFactory implements ServiceFactory
     if (schemaExport == null)
     {
       log.debug("creating schema export");
-      schemaExport = new SchemaExport(getConfiguration());
+      schemaExport = new SchemaExport();
     }
     return schemaExport;
   }
@@ -126,14 +126,21 @@ public class DbPersistenceServiceFactory implements ServiceFactory
 
   public void createSchema()
   {
-    getSchemaExport().create(getScript(), true);
+    getSchemaExport().create(getSchemaTargets(), HibernateHelper.buildMetadata(getConfiguration()));
     HibernateHelper.clearHibernateCache(getSessionFactory());
   }
 
   public void dropSchema()
   {
     HibernateHelper.clearHibernateCache(getSessionFactory());
-    getSchemaExport().drop(getScript(), true);
+    getSchemaExport().drop(getSchemaTargets(), HibernateHelper.buildMetadata(getConfiguration()));
+  }
+
+  java.util.EnumSet<org.hibernate.tool.schema.TargetType> getSchemaTargets()
+  {
+    return getScript()
+        ? java.util.EnumSet.of(org.hibernate.tool.schema.TargetType.DATABASE, org.hibernate.tool.schema.TargetType.STDOUT)
+        : java.util.EnumSet.of(org.hibernate.tool.schema.TargetType.DATABASE);
   }
 
   boolean getScript()

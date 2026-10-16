@@ -21,53 +21,48 @@
  */
 package org.jbpm.db.hibernate;
 
+import java.io.Serializable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 
-import org.hibernate.dialect.Dialect;
-import org.hibernate.type.DiscriminatorType;
-import org.hibernate.type.ImmutableType;
+import org.hibernate.HibernateException;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
+import org.hibernate.usertype.UserType;
 import org.jbpm.context.def.Access;
 
-public class AccessType extends ImmutableType implements DiscriminatorType {
+/**
+ * stores {@link Access} as a varchar. Hibernate 4+ removed ImmutableType, so this is a UserType.
+ */
+public class AccessType implements UserType, Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  public Object get(ResultSet rs, String name) throws SQLException {
-    return new Access(rs.getString(name));
+  static final int[] SQLTYPES = new int[] { Types.VARCHAR };
+
+  public int[] sqlTypes() { return SQLTYPES; }
+  public Class returnedClass() { return Access.class; }
+  public boolean equals(Object x, Object y) { return x == y || (x != null && x.equals(y)); }
+  public int hashCode(Object x) { return x.hashCode(); }
+  public Object deepCopy(Object value) { return value; }
+  public boolean isMutable() { return false; }
+  public Serializable disassemble(Object value) { return (Serializable) value; }
+  public Object assemble(Serializable cached, Object owner) { return cached; }
+  public Object replace(Object original, Object target, Object owner) { return original; }
+
+  public Object nullSafeGet(ResultSet rs, String[] names, SharedSessionContractImplementor session, Object owner)
+      throws HibernateException, SQLException {
+    // same as Hibernate 3 ImmutableType.get(): a null column still yields an Access (its default)
+    return new Access(rs.getString(names[0]));
   }
 
-  public Class getReturnedClass() {
-    return Access.class;
-  }
-
-  public void set(PreparedStatement st, Object value, int index) throws SQLException {
-    st.setString(index, ((Access) value).toString());
-  }
-
-  public int sqlType() {
-    return Types.VARCHAR;
-  }
-
-  public String getName() {
-    return "access";
-  }
-
-  public String objectToSQLString(Object value, Dialect dialect) throws Exception {
-    return '\'' + value.toString() + '\'';
-  }
-
-  public Object stringToObject(String xml) throws Exception {
-    return xml;
-  }
-
-  public String toString(Object value) {
-    return (value!=null? value.toString() : "null");
-  }
-
-  public Object fromStringValue(String xml) {
-    return xml;
+  public void nullSafeSet(PreparedStatement st, Object value, int index, SharedSessionContractImplementor session)
+      throws HibernateException, SQLException {
+    if (value == null) {
+      st.setNull(index, Types.VARCHAR);
+    } else {
+      st.setString(index, value.toString());
+    }
   }
 }

@@ -26,8 +26,11 @@ import javax.transaction.UserTransaction;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.engine.SessionFactoryImplementor;
-import org.hibernate.util.JTAHelper;
+import javax.transaction.TransactionManager;
+
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.engine.transaction.internal.jta.JtaStatusHelper;
+import org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform;
 import org.jbpm.JbpmException;
 import org.jbpm.persistence.db.DbPersistenceService;
 
@@ -65,7 +68,9 @@ public class JtaDbPersistenceService extends DbPersistenceService {
 
   boolean isJtaTransactionInProgress() {
     SessionFactoryImplementor sessionFactory = (SessionFactoryImplementor) getSessionFactory();
-    return JTAHelper.isTransactionInProgress(sessionFactory);
+    JtaPlatform jtaPlatform = sessionFactory.getServiceRegistry().getService(JtaPlatform.class);
+    TransactionManager transactionManager = jtaPlatform != null ? jtaPlatform.retrieveTransactionManager() : null;
+    return transactionManager != null && JtaStatusHelper.isActive(transactionManager);
   }
 
   void beginUserTransaction() {
@@ -80,7 +85,7 @@ public class JtaDbPersistenceService extends DbPersistenceService {
   }
 
   void endUserTransaction() {
-    if (isRollbackOnly() || JTAHelper.isRollback(getUserTransactionStatus())) {
+    if (isRollbackOnly() || JtaStatusHelper.isRollback(getUserTransactionStatus())) {
       log.debug("rolling back user transaction");
       try {
         userTransaction.rollback();

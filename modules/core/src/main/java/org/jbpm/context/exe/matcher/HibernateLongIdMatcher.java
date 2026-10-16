@@ -46,7 +46,13 @@ public class HibernateLongIdMatcher implements JbpmTypeMatcher {
       
       SessionFactory sessionFactory = jbpmContext.getSessionFactory();
       if (sessionFactory!=null) {
-        ClassMetadata classMetadata = sessionFactory.getClassMetadata(valueClass);
+        ClassMetadata classMetadata;
+        try {
+          classMetadata = sessionFactory.getClassMetadata(valueClass);
+        } catch (org.hibernate.MappingException e) {
+          // Hibernate 5 throws for non-entity classes where Hibernate 3 returned null
+          classMetadata = null;
+        }
         matches =  ( (classMetadata!=null)
                      && (classMetadata.getIdentifierType().getClass()==LongType.class)
                    );

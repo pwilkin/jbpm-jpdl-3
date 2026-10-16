@@ -3,3 +3,5 @@ eclipse
 .project
 .classpath
 *.iml
+target/
+.attach_pid*

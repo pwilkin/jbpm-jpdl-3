@@ -124,7 +124,7 @@
     
     <!-- Remove this static dependency -->
     <dependency>
-      <groupId>hsqldb</groupId>
+      <groupId>org.hsqldb</groupId>
       <artifactId>hsqldb</artifactId>
       <scope>test</scope>
     </dependency>
@@ -166,7 +166,16 @@
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
           <showDeprecation>false</showDeprecation>
+          <!-- hand-written Hibernate 3 Session/SessionFactory/Transaction mocks; not ported to the Hibernate 5 interfaces -->
+          <testExcludes>
+            <exclude>org/jbpm/DbServer.java</exclude>
+            <exclude>org/jbpm/persistence/db/Mock*.java</exclude>
+            <exclude>org/jbpm/persistence/db/PersistenceDbServiceTest.java</exclude>
+            <exclude>org/jbpm/persistence/db/PersistenceDbServiceNoTxTest.java</exclude>
+          </testExcludes>
         </configuration>
       </plugin>
       <plugin>

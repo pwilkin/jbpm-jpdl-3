@@ -46,12 +46,16 @@ public class ConverterEnumType implements UserType {
   public int[] sqlTypes() { return SQLTYPES; }
   public Class returnedClass() { return Converter.class; }
 
-  public Object nullSafeGet(ResultSet resultSet, String[] names, Object owner) throws HibernateException, SQLException {
+  public Object nullSafeGet(ResultSet resultSet, String[] names, org.hibernate.engine.spi.SharedSessionContractImplementor session, Object owner) throws HibernateException, SQLException {
     String converterDatabaseId = resultSet.getString(names[0]);
+    // CHAR columns wider than 1 come back space-padded, which breaks the converter lookup
+    if (converterDatabaseId != null) {
+      converterDatabaseId = converterDatabaseId.trim();
+    }
     return Converters.getConverterByDatabaseId(converterDatabaseId);
   }
 
-  public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index) throws HibernateException, SQLException {
+  public void nullSafeSet(PreparedStatement preparedStatement, Object value, int index, org.hibernate.engine.spi.SharedSessionContractImplementor session) throws HibernateException, SQLException {
     String converterDatabaseId = Converters.getConverterId((Converter) value);
     preparedStatement.setString(index, converterDatabaseId);
   }

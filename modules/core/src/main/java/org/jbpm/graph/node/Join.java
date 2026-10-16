@@ -83,10 +83,26 @@ public class Join extends Node implements Parsable {
     return NodeType.Join;
   }
 
+  /**
+   * Hibernate 3 LockMode.parse() replacement: accepts the enum names stored in JBPM_NODE.PARENTLOCKMODE_
+   * (e.g. "FORCE", "UPGRADE") as well as the lower-case external forms; returns null when unknown.
+   */
+  static LockMode parseLockMode(String name) {
+    try {
+      return LockMode.valueOf(name.toUpperCase());
+    } catch (IllegalArgumentException e) {
+      try {
+        return LockMode.fromExternalForm(name.toLowerCase());
+      } catch (IllegalArgumentException e2) {
+        return null;
+      }
+    }
+  }
+
   public void read(Element element, JpdlXmlReader jpdlReader) {
     String lock = element.attributeValue("lock");
     if (lock != null) {
-      LockMode lockMode = LockMode.parse(lock);
+      LockMode lockMode = parseLockMode(lock);
       if (lockMode != null)
         parentLockMode = lockMode.toString();
       else if ("pessimistic".equals(lock))
@@ -121,7 +137,7 @@ public class Join extends Node implements Parsable {
         Session session = (jbpmContext!=null ? jbpmContext.getSession() : null);
         if (session!=null) {
           // force version increment by default (LockMode.FORCE)
-          LockMode lockMode = parentLockMode != null ? LockMode.parse(parentLockMode) : LockMode.FORCE;
+          LockMode lockMode = parentLockMode != null ? parseLockMode(parentLockMode) : LockMode.FORCE;
           log.debug("acquiring " + lockMode + " lock on " + parentToken);
           // lock updates as appropriate, no need to flush here
           session.lock(parentToken, lockMode);
