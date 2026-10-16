@@ -189,10 +189,10 @@
               <goal>run</goal>
             </goals>
             <configuration>
-              <tasks>
+              <target>
                 <property name="database" value="${database}" />
                 <ant antfile="scripts/antrun-jbpm-config.xml" target="concat" />
-              </tasks>
+              </target>
             </configuration>
           </execution>
         </executions>
