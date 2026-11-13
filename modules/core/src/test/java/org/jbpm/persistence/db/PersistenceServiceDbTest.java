@@ -40,7 +40,8 @@ import org.jbpm.svc.Services;
 public class PersistenceServiceDbTest extends AbstractJbpmTestCase {
   
   public void testDefaults() throws Exception {
-    JbpmConfiguration jbpmConfiguration = JbpmConfiguration.getInstance();
+    // a private configuration: the shared singleton may already have a session factory from earlier tests
+    JbpmConfiguration jbpmConfiguration = JbpmConfiguration.parseResource("jbpm.cfg.xml");
     JbpmContext jbpmContext = jbpmConfiguration.createJbpmContext();
     
     DbPersistenceServiceFactory persistenceServiceFactory = null;
@@ -106,6 +107,7 @@ public class PersistenceServiceDbTest extends AbstractJbpmTestCase {
     assertFalse(persistenceService.transaction.getStatus() == org.hibernate.resource.transaction.spi.TransactionStatus.ROLLED_BACK);
     assertFalse(persistenceService.session.isOpen());
     assertFalse(persistenceService.session.isConnected());
+    jbpmConfiguration.close();
   }
 
   public void testRollbackWithoutSessionCreation() throws Exception {

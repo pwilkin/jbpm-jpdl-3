@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.jbpm.jbpm3</groupId>
     <artifactId>jbpm</artifactId>
-    <version>3.3.1.GA</version>
+    <version>3.3.1.GA-syndatis-h5</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -91,21 +91,17 @@
       <artifactId>hibernate-core</artifactId>
     </dependency>
     <dependency>
-		<groupId>cglib</groupId>
-		<artifactId>cglib</artifactId>
-	</dependency>
-    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <scope>provided</scope>
-    </dependency>
-   	<dependency>
-		<groupId>org.javassist</groupId>
-		<artifactId>javassist</artifactId>
-		<version>3.18.2-GA</version>
-	</dependency>    
+    </dependency>    
 
     <!-- Test Dependencies -->
+    <dependency>
+      <groupId>cglib</groupId>
+      <artifactId>cglib</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>dumbster</groupId>
       <artifactId>dumbster</artifactId>
@@ -191,6 +187,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
         <executions>
           <execution>
             <phase>compile</phase>
